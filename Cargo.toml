@@ -1,15 +1,19 @@
 [workspace]
-name = "rdfreak"
+members = [
+    "rdfreak",
+    "rdfreak_derive",
+]
+
+[workspace.package]
+description = "Library for mapping rust types to RDF entities"
 edition = "2024"
 license = "MIT"
 keywords = ["rdf", "serialization", "deserialization"]
 homepage = "https://github.com/WLowe10/rdfreak"
 repository = "https://github.com/WLowe10/rdfreak"
 documentation = "https://docs.rs/rdfreak"
-members = [
-    "rdfreak",
-]
 
 [workspace.dependencies]
 oxrdf = "0.3.0"
 thiserror = "2.0.18"
+pretty_assertions = "1.4.1"

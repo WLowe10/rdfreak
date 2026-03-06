@@ -1,0 +1,21 @@
+[package]
+name = "rdfreak_derive"
+version = "0.1.0"
+description = "Derive macros for rdfreak"
+edition.workspace = true
+repository.workspace = true
+keywords.workspace = true
+license.workspace = true
+readme.workspace = true
+
+[lib]
+proc-macro = true
+
+[dependencies]
+darling = "0.23.0"
+proc-macro2 = "1.0.106"
+quote = "1.0.44"
+syn = "2.0.117"
+
+[dev-dependencies]
+pretty_assertions = { workspace = true }
