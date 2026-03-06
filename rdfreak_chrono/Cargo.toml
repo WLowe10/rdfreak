@@ -8,6 +8,8 @@ keywords.workspace = true
 license.workspace = true
 
 [dependencies]
+rdfreak = { path = "../rdfreak" }
+oxrdf = { workspace = true }
 chrono = "0.4"
 
 [dev-dependencies]
