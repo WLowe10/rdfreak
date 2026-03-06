@@ -3,8 +3,9 @@ members = [
     "rdfreak",
     "rdfreak_derive",
     "rdfreak_utils",
+	"rdfreak_chrono",
 	"rdfreak_query",
-	"rdfreak_query_oxigraph"
+	"rdfreak_query_oxigraph",
 ]
 
 [workspace.package]

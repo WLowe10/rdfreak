@@ -1,0 +1,14 @@
+[package]
+name = "rdfreak_chrono"
+version = "0.1.0"
+description = "Chrono types for rdfreak"
+edition.workspace = true
+repository.workspace = true
+keywords.workspace = true
+license.workspace = true
+
+[dependencies]
+chrono = "0.4"
+
+[dev-dependencies]
+pretty_assertions = { workspace = true }
