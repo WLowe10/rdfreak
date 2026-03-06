@@ -5,5 +5,4 @@ edition = "2024"
 
 [dependencies]
 oxrdf = "0.3.0"
-spargebra = "0.4.5"
 thiserror = "2.0.18"
