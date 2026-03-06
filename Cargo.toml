@@ -1,14 +1,15 @@
-[package]
+[workspace]
 name = "rdfreak"
-description = "Library for mapping rust types to RDF entities"
-version = "0.1.0"
 edition = "2024"
 license = "MIT"
-keywords = ["sparql", "rdf"]
+keywords = ["rdf", "serialization", "deserialization"]
 homepage = "https://github.com/WLowe10/rdfreak"
 repository = "https://github.com/WLowe10/rdfreak"
 documentation = "https://docs.rs/rdfreak"
+members = [
+    "rdfreak",
+]
 
-[dependencies]
+[workspace.dependencies]
 oxrdf = "0.3.0"
 thiserror = "2.0.18"
