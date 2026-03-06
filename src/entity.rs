@@ -1,46 +1,105 @@
-use oxrdf::{Graph, NamedNode};
+use oxrdf::{Graph, NamedNode, NamedOrBlankNode, Triple};
 
-use crate::DeserializeLiteralError;
-
-#[derive(Debug)]
-pub enum EntityPropertyDefinitionKind {
-    Literal,
-    Entity(Vec<EntityPropertyDefinition>),
-}
-
-#[derive(Debug)]
-pub struct EntityPropertyDefinition {
-    kind: EntityPropertyDefinitionKind,
-    name: NamedNode,
-    predicate: NamedNode,
-    is_optional: bool,
-}
+use crate::{DeserializeRdfPropertyError, RdfProperty, RdfType};
 
 #[derive(Debug, thiserror::Error)]
 pub enum DeserializeEntityError {
-    #[error("Missing property: {0}")]
-    MissingProperty(String),
+    #[error("Missing rdf:type")]
+    MissingRdfType,
 
-    #[error(transparent)]
-    FailedToDeserializeLiteral(#[from] DeserializeLiteralError),
+    // note: consider whether the values in the error message should be formatted with debug (current) or display
+    #[error("Invalid rdf:type: expected {expected:?}, found {found:?}")]
+    InvalidRdfType {
+        expected: NamedNode,
+        found: Vec<NamedNode>,
+    },
+
+    #[error("Failed to deserialize property '{property}' for subject {subject:?}: {source}")]
+    FailedToDeserializeProperty {
+        subject: NamedOrBlankNode,
+        property: String,
+        #[source]
+        source: Box<DeserializeRdfPropertyError>,
+    },
 }
 
 pub type DeserializeEntityResult<T> = Result<T, DeserializeEntityError>;
 
-/// A trait representing an entity that can be serialized and deserialized to and from RDF graphs.
+/// Represents an entity in RDF.
 pub trait Entity: Sized {
-    // returns the rdf typ of the entity, which is used to identify the type of the entity in the graph.
-    fn get_rdf_type() -> &'static NamedNode;
+    // question: should this return Vec<NamedNode>?
+    /// Returns the rdf type of the entity, which is used to identify the type of the entity in the graph.
+    fn get_rdf_type() -> NamedNode;
 
-    /// returns a list of property definitions for the entity type.
-    fn get_property_definitions() -> Vec<EntityPropertyDefinition>;
+    /// Serializes the properties of the entity into the given graph.
+    fn serialize_properties(&self, graph: &mut Graph);
 
-    /// serializes the entity into the given graph.
-    fn serialize(&self, graph: &mut Graph);
+    /// Serializes the entity into the given graph.
+    fn serialize(&self, graph: &mut Graph) {
+        self.serialize_properties(graph);
 
-    /// deserializes the entity from the given graph and IRI.
-    fn deserialize(graph: &Graph, iri: &NamedNode) -> DeserializeEntityResult<Self>;
+        graph.insert(&Triple::new(
+            self.get_subject().as_ref(),
+            NamedNode::new_unchecked("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
+            Self::get_rdf_type().as_ref(),
+        ));
+    }
 
-    /// returns the IRI of the entity.
-    fn get_iri(&self) -> &NamedNode;
+    /// Deserializes the entity from the given graph and subject.
+    fn deserialize_properties(
+        graph: &Graph,
+        subject: &NamedOrBlankNode,
+    ) -> DeserializeEntityResult<Self>;
+
+    /// Deserializes the entity from the given graph and subject.
+    fn deserialize(graph: &Graph, subject: &NamedOrBlankNode) -> DeserializeEntityResult<Self> {
+        let expected_rdf_type = Self::get_rdf_type();
+
+        let rdf_types = Vec::<RdfType>::deserialize_property(
+            graph,
+            subject,
+            &NamedNode::new_unchecked("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
+        )
+        .map_err(|err| DeserializeEntityError::FailedToDeserializeProperty {
+            subject: subject.clone(),
+            property: "rdf:type".to_string(),
+            source: Box::new(err),
+        })?;
+
+        let has_expected_rdf_type = rdf_types
+            .iter()
+            .any(|rdf_type| rdf_type.get_named_node() == &expected_rdf_type);
+
+        if !has_expected_rdf_type {
+            return Err(DeserializeEntityError::InvalidRdfType {
+                expected: expected_rdf_type,
+                found: rdf_types
+                    .into_iter()
+                    .map(|rdf_type| rdf_type.get_named_node().clone())
+                    .collect(),
+            });
+        }
+
+        Self::deserialize_properties(graph, subject)
+    }
+
+    fn deserialize_all(graph: &Graph) -> DeserializeEntityResult<Vec<Self>> {
+        let mut entities = Vec::new();
+
+        let entity_subjects = graph.subjects_for_predicate_object(
+            &NamedNode::new_unchecked("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
+            Self::get_rdf_type().as_ref(),
+        );
+
+        for entity_subject in entity_subjects {
+            let entity = Self::deserialize(graph, &entity_subject.into_owned())?;
+
+            entities.push(entity);
+        }
+
+        Ok(entities)
+    }
+
+    /// Returns the subject of the entity.
+    fn get_subject(&self) -> &NamedOrBlankNode;
 }

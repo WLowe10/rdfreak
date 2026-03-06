@@ -13,11 +13,14 @@ pub enum DeserializeLiteralError {
 
 pub type DeserializeLiteralResult<T> = Result<T, DeserializeLiteralError>;
 
-// we will be able to make a derive for RdfLiteral as long as the type implements something to go to a str and FromStr
+// we will be able to make a derive for RdfLiteral as long as the type implements Display + FromStr
 
+/// Represents a type that can be converted to and from an RDF literal.
 pub trait RdfLiteral: Sized {
+    /// Converts the value to an RDF literal
     fn to_literal(&self) -> Literal;
 
+    /// Converts an RDF literal to the value type, if possible.
     fn from_literal(literal: &Literal) -> DeserializeLiteralResult<Self>;
 }
 
