@@ -1,6 +1,6 @@
 # rdfreak
 
-Library for mapping rust types to RDF entities.
+Library for mapping rust types to RDF entities. rdfreak is built on top of types in the [oxigraph](https://github.com/oxigraph/oxigraph) ecosystem.
 
 ## Install
 
@@ -16,6 +16,7 @@ cargo add rdfreak_derive
 The easiest way to declare an entity is using the derive macro from `rdfreak_derive`. When using the derive macro, one field of your entity struct must be marked with `#[rdf(subject)]`, and the rest must be marked with `#[rdf(predicate = "")]`.
 
 ```rust
+use oxrdf::NamedOrBlankNode;
 use rdfreak_derive::Entity;
 
 #[derive(Debug, Entity)]
