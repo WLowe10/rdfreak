@@ -7,9 +7,9 @@ use rdfreak::{
     RdfLiteral, RdfObject, RdfProperty,
 };
 
+/// A wrapper around `chrono::NaiveDate` for representing xsd:date literals in RDF.
 pub struct Date(chrono::NaiveDate);
 
-/// A wrapper around `chrono::NaiveDate` for representing xsd:date literals in RDF.
 impl Date {
     pub fn new(date: chrono::NaiveDate) -> Self {
         Self(date)
@@ -76,7 +76,7 @@ impl RdfObject for Date {
         Term::Literal(self.to_literal())
     }
 
-    fn from_term(_graph: &Graph, term: &oxrdf::Term) -> DeserializeRdfObjectResult<Self> {
+    fn from_term(_graph: &Graph, term: &Term) -> DeserializeRdfObjectResult<Self> {
         let oxrdf::Term::Literal(lit) = term else {
             return Err(DeserializeRdfObjectError::UnexpectedTermType(term.clone()));
         };
