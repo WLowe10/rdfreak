@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use oxrdf::{Graph, Literal, NamedNode, NamedOrBlankNode, Term, Triple};
 use rdfreak::{
     DeserializeLiteralError, DeserializeLiteralResult, DeserializeRdfObjectError,
@@ -13,8 +15,16 @@ impl Date {
         Self(date)
     }
 
-    pub fn get_date(&self) -> chrono::NaiveDate {
+    pub fn inner(&self) -> chrono::NaiveDate {
         self.0
+    }
+}
+
+impl Deref for Date {
+    type Target = chrono::NaiveDate;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
 
