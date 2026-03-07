@@ -1,0 +1,11 @@
+[package]
+name = "rdfreak_utils"
+version = "0.1.0"
+description = "Useful types and helpers for rdfreak"
+edition.workspace = true
+repository.workspace = true
+keywords.workspace = true
+license.workspace = true
+
+[dependencies]
+rdfreak = { path = "../rdfreak" }
