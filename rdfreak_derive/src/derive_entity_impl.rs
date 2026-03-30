@@ -97,16 +97,16 @@ pub fn derive_entity_impl(input: syn::DeriveInput) -> syn::Result<TokenStream> {
     // generate code for serializing each property
 
     let serialize_property_statements = struct_data
-		.fields
-		.iter()
-		.zip(&property_attributes)
+        .fields
+        .iter()
+        .zip(&property_attributes)
         .filter(|(_, attr)| !attr.is_subject)
         .map(|(field, attr)| {
             let field_ident = field.ident.as_ref().unwrap();
             let predicate = attr.predicate.as_ref().unwrap();
 
             let serialize_field_statement = quote! {
-                self.#field_ident.serialize_property(graph, subject, &::oxrdf::NamedNode::new_unchecked(#predicate));
+                ::rdfreak::RdfProperty::serialize_property(&self.#field_ident, graph, subject, &::oxrdf::NamedNode::new_unchecked(#predicate));
             };
 
             Ok(serialize_field_statement)
@@ -147,8 +147,12 @@ pub fn derive_entity_impl(input: syn::DeriveInput) -> syn::Result<TokenStream> {
                 ::oxrdf::NamedNode::new_unchecked(#struct_rdf_type)
             }
 
+            fn get_subject(&self) -> &::oxrdf::NamedOrBlankNode {
+                &self.#subject_identifier
+            }
+
             fn serialize_properties(&self, graph: &mut ::oxrdf::Graph) {
-                let subject = self.get_subject();
+                let subject = ::rdfreak::Entity::get_subject(self);
 
                 #(#serialize_property_statements)*
             }
@@ -159,15 +163,13 @@ pub fn derive_entity_impl(input: syn::DeriveInput) -> syn::Result<TokenStream> {
                     #(#deserialize_struct_field_inits)*
                 })
             }
-
-            fn get_subject(&self) -> &::oxrdf::NamedOrBlankNode {
-                &self.#subject_identifier
-            }
         }
 
         impl ::rdfreak::RdfObject for #struct_identifier {
             fn to_term(&self) -> ::oxrdf::Term {
-                match self.get_subject() {
+                let subject = ::rdfreak::Entity::get_subject(self);
+
+                match subject {
                     NamedOrBlankNode::NamedNode(named_node) => Term::NamedNode(named_node.clone()),
                     NamedOrBlankNode::BlankNode(blank_node) => Term::BlankNode(blank_node.clone()),
                 }
@@ -178,7 +180,7 @@ pub fn derive_entity_impl(input: syn::DeriveInput) -> syn::Result<TokenStream> {
                     return Err(::rdfreak::DeserializeRdfObjectError::UnexpectedTermType(term.clone()));
                 };
 
-                let value = Self::deserialize(graph, &::oxrdf::NamedOrBlankNode::NamedNode(named_node.clone()))?;
+                let value = <Self as ::rdfreak::Entity>::deserialize(graph, &::oxrdf::NamedOrBlankNode::NamedNode(named_node.clone()))?;
 
                 Ok(value)
             }
@@ -186,9 +188,9 @@ pub fn derive_entity_impl(input: syn::DeriveInput) -> syn::Result<TokenStream> {
 
         impl ::rdfreak::RdfProperty for #struct_identifier {
             fn serialize_property(&self, graph: &mut ::oxrdf::Graph, subject: &::oxrdf::NamedOrBlankNode, predicate: &::oxrdf::NamedNode) {
-                self.serialize(graph);
+                ::rdfreak::Entity::serialize(self, graph);
 
-                let term = self.to_term();
+                let term = ::rdfreak::RdfObject::to_term(self);
 
                 graph.insert(&::oxrdf::Triple::new(
                     subject.as_ref(),
@@ -202,7 +204,7 @@ pub fn derive_entity_impl(input: syn::DeriveInput) -> syn::Result<TokenStream> {
                     .object_for_subject_predicate(subject, predicate)
                     .ok_or_else(|| ::rdfreak::DeserializeRdfPropertyError::MissingObjectValue(predicate.clone()))?;
 
-                let value = Self::from_term(graph, &object_term.into_owned())?;
+                let value = <Self as ::rdfreak::RdfObject>::from_term(graph, &object_term.into_owned())?;
 
                 Ok(value)
             }
@@ -302,12 +304,16 @@ mod tests {
                     ::oxrdf::NamedNode::new_unchecked("http://example.org/Person")
                 }
 
-                fn serialize_properties(&self, graph: &mut ::oxrdf::Graph) {
-                    let subject = self.get_subject();
+                fn get_subject(&self) -> &::oxrdf::NamedOrBlankNode {
+                    &self.subject
+                }
 
-                    self.name.serialize_property(graph, subject, &::oxrdf::NamedNode::new_unchecked("http://example.org/name"));
-                    self.age.serialize_property(graph, subject, &::oxrdf::NamedNode::new_unchecked("http://example.org/age"));
-                    self.date_of_death.serialize_property(graph, subject, &::oxrdf::NamedNode::new_unchecked("http://example.org/dateOfDeath"));
+                fn serialize_properties(&self, graph: &mut ::oxrdf::Graph) {
+                    let subject = ::rdfreak::Entity::get_subject(self);
+
+                    ::rdfreak::RdfProperty::serialize_property(&self.name, graph, subject, &::oxrdf::NamedNode::new_unchecked("http://example.org/name"));
+                    ::rdfreak::RdfProperty::serialize_property(&self.age, graph, subject, &::oxrdf::NamedNode::new_unchecked("http://example.org/age"));
+                    ::rdfreak::RdfProperty::serialize_property(&self.date_of_death, graph, subject, &::oxrdf::NamedNode::new_unchecked("http://example.org/dateOfDeath"));
                 }
 
                 fn deserialize_properties(graph: &::oxrdf::Graph, subject: &::oxrdf::NamedOrBlankNode) -> ::rdfreak::DeserializeEntityResult<Self> {
@@ -351,15 +357,13 @@ mod tests {
                         )?,
                     })
                 }
-
-                fn get_subject(&self) -> &::oxrdf::NamedOrBlankNode {
-                    &self.subject
-                }
             }
 
             impl ::rdfreak::RdfObject for Person {
                 fn to_term(&self) -> ::oxrdf::Term {
-                    match self.get_subject() {
+                    let subject = ::rdfreak::Entity::get_subject(self);
+
+                    match subject {
                         NamedOrBlankNode::NamedNode(named_node) => Term::NamedNode(named_node.clone()),
                         NamedOrBlankNode::BlankNode(blank_node) => Term::BlankNode(blank_node.clone()),
                     }
@@ -370,7 +374,7 @@ mod tests {
                         return Err(::rdfreak::DeserializeRdfObjectError::UnexpectedTermType(term.clone()));
                     };
 
-                    let value = Self::deserialize(graph, &::oxrdf::NamedOrBlankNode::NamedNode(named_node.clone()))?;
+                    let value = <Self as ::rdfreak::Entity>::deserialize(graph, &::oxrdf::NamedOrBlankNode::NamedNode(named_node.clone()))?;
 
                     Ok(value)
                 }
@@ -378,7 +382,9 @@ mod tests {
 
             impl ::rdfreak::RdfProperty for Person {
                 fn serialize_property(&self, graph: &mut ::oxrdf::Graph, subject: &::oxrdf::NamedOrBlankNode, predicate: &::oxrdf::NamedNode) {
-                    let term = self.to_term();
+                    ::rdfreak::Entity::serialize(self, graph);
+
+                    let term = ::rdfreak::RdfObject::to_term(self);
 
                     graph.insert(&::oxrdf::Triple::new(
                         subject.as_ref(),
@@ -392,7 +398,7 @@ mod tests {
                         .object_for_subject_predicate(subject, predicate)
                         .ok_or_else(|| ::rdfreak::DeserializeRdfPropertyError::MissingObjectValue(predicate.clone()))?;
 
-                    let value = Self::from_term(graph, &object_term.into_owned())?;
+                    let value = <Self as ::rdfreak::RdfObject>::from_term(graph, &object_term.into_owned())?;
 
                     Ok(value)
                 }
