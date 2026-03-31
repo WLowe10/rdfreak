@@ -33,7 +33,7 @@ pub trait RdfProperty: Sized {
     ) -> DeserializeRdfPropertyResult<Self>;
 }
 
-pub trait ConstructableRdfProperty {
+pub trait ConstructibleRdfProperty {
     fn build_patterns(
         construct_query_patterns: &mut SparqlConstructQueryPatterns,
         variable_generator: &mut SparqlVariableGenerator,
@@ -252,7 +252,7 @@ impl RdfProperty for String {
     }
 }
 
-impl ConstructableRdfProperty for String {
+impl ConstructibleRdfProperty for String {
     fn build_patterns(
         construct_query_patterns: &mut SparqlConstructQueryPatterns,
         variable_generator: &mut SparqlVariableGenerator,
@@ -303,7 +303,7 @@ impl<T: RdfProperty + RdfObject> RdfProperty for Option<T> {
     }
 }
 
-impl<T: ConstructableRdfProperty> ConstructableRdfProperty for Option<T> {
+impl<T: ConstructibleRdfProperty> ConstructibleRdfProperty for Option<T> {
     fn build_patterns(
         construct_query_patterns: &mut SparqlConstructQueryPatterns,
         variable_generator: &mut SparqlVariableGenerator,
@@ -356,7 +356,7 @@ impl<T: RdfProperty + RdfObject> RdfProperty for Vec<T> {
     }
 }
 
-impl<T: ConstructableRdfProperty> ConstructableRdfProperty for Vec<T> {
+impl<T: ConstructibleRdfProperty> ConstructibleRdfProperty for Vec<T> {
     fn build_patterns(
         construct_query_patterns: &mut SparqlConstructQueryPatterns,
         variable_generator: &mut SparqlVariableGenerator,

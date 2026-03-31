@@ -153,7 +153,7 @@ pub fn derive_entity_impl(input: syn::DeriveInput) -> syn::Result<TokenStream> {
             let predicate = attr.predicate.as_ref().unwrap();
 
             let build_property_pattern_statement = quote! {
-                <#field_type as ::rdfreak::ConstructableRdfProperty>::build_patterns(construct_query_patterns, variable_generator, subject_variable, &::oxrdf::NamedNode::new_unchecked(#predicate));
+                <#field_type as ::rdfreak::ConstructibleRdfProperty>::build_patterns(construct_query_patterns, variable_generator, subject_variable, &::oxrdf::NamedNode::new_unchecked(#predicate));
             };
 
             Ok(build_property_pattern_statement)
@@ -229,7 +229,7 @@ pub fn derive_entity_impl(input: syn::DeriveInput) -> syn::Result<TokenStream> {
             }
         }
 
-        impl ::rdfreak::ConstructableEntity for #struct_identifier {
+        impl ::rdfreak::ConstructibleEntity for #struct_identifier {
             fn build_property_patterns(
                 construct_query_patterns: &mut ::rdfreak::SparqlConstructQueryPatterns,
                 variable_generator: &mut ::rdfreak::SparqlVariableGenerator,
@@ -239,7 +239,7 @@ pub fn derive_entity_impl(input: syn::DeriveInput) -> syn::Result<TokenStream> {
             }
         }
 
-        impl ::rdfreak::ConstructableRdfProperty for #struct_identifier {
+        impl ::rdfreak::ConstructibleRdfProperty for #struct_identifier {
             fn build_patterns(
                 construct_query_patterns: &mut ::rdfreak::SparqlConstructQueryPatterns,
                 variable_generator: &mut ::rdfreak::SparqlVariableGenerator,
@@ -259,7 +259,7 @@ pub fn derive_entity_impl(input: syn::DeriveInput) -> syn::Result<TokenStream> {
                     .where_patterns
                     .push_str(&triple_pattern);
 
-                <Self as ::rdfreak::ConstructableEntity>::build_patterns(construct_query_patterns, variable_generator, &object_variable);
+                <Self as ::rdfreak::ConstructibleEntity>::build_patterns(construct_query_patterns, variable_generator, &object_variable);
             }
         }
     };

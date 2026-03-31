@@ -107,7 +107,7 @@ pub trait Entity: Sized {
     fn get_subject(&self) -> &NamedOrBlankNode;
 }
 
-pub trait ConstructableEntity: Entity {
+pub trait ConstructibleEntity: Entity {
     fn build_property_patterns(
         construct_query_patterns: &mut SparqlConstructQueryPatterns,
         variable_generator: &mut SparqlVariableGenerator,
