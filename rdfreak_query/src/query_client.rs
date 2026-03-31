@@ -18,8 +18,8 @@ pub enum QueryError {
     #[error("Failed to query graph: {0}")]
     FailedToQueryGraph(Box<dyn Error>),
 
-    #[error("Failed to deserialize result: {0}")]
-    FailedToDeserializeResult(DeserializeEntityError),
+    #[error("Failed to deserialize entity: {0}")]
+    FailedToDeserializeEntity(DeserializeEntityError),
 }
 
 impl QueryClient {
@@ -62,7 +62,7 @@ impl QueryClient {
         match entity_result {
             Ok(entity) => Ok(Some(entity)),
             Err(DeserializeEntityError::InvalidRdfType { .. }) => Ok(None),
-            Err(err) => Err(QueryError::FailedToDeserializeResult(err)),
+            Err(err) => Err(QueryError::FailedToDeserializeEntity(err)),
         }
     }
 
@@ -92,7 +92,7 @@ impl QueryClient {
             .map_err(QueryError::FailedToQueryGraph)?;
 
         let entities =
-            E::deserialize_all(&result_graph).map_err(QueryError::FailedToDeserializeResult)?;
+            E::deserialize_all(&result_graph).map_err(QueryError::FailedToDeserializeEntity)?;
 
         Ok(entities)
     }
