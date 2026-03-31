@@ -1,6 +1,8 @@
 use oxrdf::{BlankNode, Graph, Literal, NamedNode, NamedOrBlankNode, Term, Triple};
 
-use crate::{DeserializeRdfObjectError, RdfObject};
+use crate::{
+    DeserializeRdfObjectError, RdfObject, SparqlConstructQueryPatterns, SparqlVariableGenerator,
+};
 
 #[derive(Debug, thiserror::Error)]
 pub enum DeserializeRdfPropertyError {
@@ -29,6 +31,15 @@ pub trait RdfProperty: Sized {
         subject: &NamedOrBlankNode,
         predicate: &NamedNode,
     ) -> DeserializeRdfPropertyResult<Self>;
+}
+
+pub trait ConstructableRdfProperty {
+    fn build_patterns(
+        construct_query_patterns: &mut SparqlConstructQueryPatterns,
+        variable_generator: &mut SparqlVariableGenerator,
+        subject_variable: &str,
+        predicate: &NamedNode,
+    );
 }
 
 // note: lot of repetition here. consider using a macro to generate some of these
@@ -241,6 +252,28 @@ impl RdfProperty for String {
     }
 }
 
+impl ConstructableRdfProperty for String {
+    fn build_patterns(
+        construct_query_patterns: &mut SparqlConstructQueryPatterns,
+        variable_generator: &mut SparqlVariableGenerator,
+        subject_variable: &str,
+        predicate: &NamedNode,
+    ) {
+        let object_variable = variable_generator.next().unwrap();
+
+        let triple_pattern = format!(
+            "\t{} {} {} .\n",
+            subject_variable, predicate, object_variable
+        );
+
+        construct_query_patterns.patterns.push_str(&triple_pattern);
+
+        construct_query_patterns
+            .where_patterns
+            .push_str(&triple_pattern);
+    }
+}
+
 impl<T: RdfProperty + RdfObject> RdfProperty for Option<T> {
     fn serialize_property(
         &self,
@@ -267,6 +300,28 @@ impl<T: RdfProperty + RdfObject> RdfProperty for Option<T> {
         let object_value = T::from_term(graph, &object_term.into())?;
 
         Ok(Some(object_value))
+    }
+}
+
+impl<T: ConstructableRdfProperty> ConstructableRdfProperty for Option<T> {
+    fn build_patterns(
+        construct_query_patterns: &mut SparqlConstructQueryPatterns,
+        variable_generator: &mut SparqlVariableGenerator,
+        subject_variable: &str,
+        predicate: &NamedNode,
+    ) {
+        construct_query_patterns
+            .where_patterns
+            .push_str("OPTIONAL {\n");
+
+        T::build_patterns(
+            construct_query_patterns,
+            variable_generator,
+            subject_variable,
+            predicate,
+        );
+
+        construct_query_patterns.where_patterns.push_str("}\n");
     }
 }
 
@@ -298,5 +353,27 @@ impl<T: RdfProperty + RdfObject> RdfProperty for Vec<T> {
         }
 
         Ok(objects)
+    }
+}
+
+impl<T: ConstructableRdfProperty> ConstructableRdfProperty for Vec<T> {
+    fn build_patterns(
+        construct_query_patterns: &mut SparqlConstructQueryPatterns,
+        variable_generator: &mut SparqlVariableGenerator,
+        subject_variable: &str,
+        predicate: &NamedNode,
+    ) {
+        construct_query_patterns
+            .where_patterns
+            .push_str("OPTIONAL {\n");
+
+        T::build_patterns(
+            construct_query_patterns,
+            variable_generator,
+            subject_variable,
+            predicate,
+        );
+
+        construct_query_patterns.where_patterns.push_str("}\n");
     }
 }
