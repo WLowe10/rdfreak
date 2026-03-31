@@ -3,7 +3,8 @@ members = [
     "rdfreak",
     "rdfreak_derive",
     "rdfreak_utils",
-	"rdfreak_query"
+	"rdfreak_query",
+	"rdfreak_query_oxigraph"
 ]
 
 [workspace.package]
@@ -18,4 +19,5 @@ documentation = "https://docs.rs/rdfreak"
 [workspace.dependencies]
 oxrdf = "0.3.0"
 thiserror = "2.0.18"
+async-trait = "0.1.89"
 pretty_assertions = "1.4.1"

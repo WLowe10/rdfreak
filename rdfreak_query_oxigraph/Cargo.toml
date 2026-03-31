@@ -1,7 +1,7 @@
 [package]
-name = "rdfreak_query"
+name = "rdfreak_query_oxigraph"
 version = "0.1.0"
-description = "Query client for rdfreak"
+description = "Oxigraph adapter helpers for rdfreak_query"
 edition.workspace = true
 repository.workspace = true
 keywords.workspace = true
@@ -9,6 +9,7 @@ license.workspace = true
 
 [dependencies]
 rdfreak = { path = "../rdfreak" }
+rdfreak_query = { path = "../rdfreak_query" }
 oxrdf = { workspace = true }
-thiserror = { workspace = true }
 async-trait = { workspace = true }
+oxigraph = "0.5.6"
