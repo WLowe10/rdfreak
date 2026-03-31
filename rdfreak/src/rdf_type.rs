@@ -21,7 +21,7 @@ impl RdfType {
 }
 
 impl RdfObject for RdfType {
-    fn to_term(&self) -> Term {
+    fn to_term(&self, _graph: &mut Graph) -> Term {
         Term::NamedNode(self.value.clone())
     }
 
@@ -41,10 +41,12 @@ impl RdfProperty for RdfType {
         subject: &oxrdf::NamedOrBlankNode,
         predicate: &NamedNode,
     ) {
+        let object_term = self.to_term(graph);
+
         graph.insert(&Triple::new(
             subject.as_ref(),
             predicate.as_ref(),
-            self.to_term(),
+            object_term,
         ));
     }
 

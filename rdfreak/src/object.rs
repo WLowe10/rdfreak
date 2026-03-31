@@ -19,14 +19,14 @@ pub type DeserializeRdfObjectResult<T> = Result<T, DeserializeRdfObjectError>;
 /// Represents a type that can be converted to and from an RDF term that can be used as the object term in a triple.
 pub trait RdfObject: Sized {
     /// Converts the value to an RDF term that can be inserted into a triple as the object term.
-    fn to_term(&self) -> Term;
+    fn to_term(&self, graph: &mut Graph) -> Term;
 
     /// Converts an RDF term to the value type, if possible.
     fn from_term(graph: &Graph, term: &Term) -> DeserializeRdfObjectResult<Self>;
 }
 
 impl RdfObject for BlankNode {
-    fn to_term(&self) -> Term {
+    fn to_term(&self, _graph: &mut Graph) -> Term {
         Term::BlankNode(self.clone())
     }
 
@@ -40,7 +40,7 @@ impl RdfObject for BlankNode {
 }
 
 impl RdfObject for NamedNode {
-    fn to_term(&self) -> Term {
+    fn to_term(&self, _graph: &mut Graph) -> Term {
         Term::NamedNode(self.clone())
     }
 
@@ -54,7 +54,7 @@ impl RdfObject for NamedNode {
 }
 
 impl RdfObject for NamedOrBlankNode {
-    fn to_term(&self) -> Term {
+    fn to_term(&self, _graph: &mut Graph) -> Term {
         match self {
             NamedOrBlankNode::NamedNode(named_node) => Term::NamedNode(named_node.clone()),
             NamedOrBlankNode::BlankNode(blank_node) => Term::BlankNode(blank_node.clone()),
@@ -71,7 +71,7 @@ impl RdfObject for NamedOrBlankNode {
 }
 
 impl RdfObject for Literal {
-    fn to_term(&self) -> Term {
+    fn to_term(&self, _graph: &mut Graph) -> Term {
         Term::Literal(self.clone())
     }
 
@@ -86,7 +86,7 @@ impl RdfObject for Literal {
 
 // feels unecessary, but may be needed for consistency reasons
 impl RdfObject for Term {
-    fn to_term(&self) -> Term {
+    fn to_term(&self, _graph: &mut Graph) -> Term {
         self.clone()
     }
 
@@ -96,7 +96,7 @@ impl RdfObject for Term {
 }
 
 impl RdfObject for i32 {
-    fn to_term(&self) -> Term {
+    fn to_term(&self, _graph: &mut Graph) -> Term {
         Term::Literal(self.to_literal())
     }
 
@@ -112,7 +112,7 @@ impl RdfObject for i32 {
 }
 
 impl RdfObject for String {
-    fn to_term(&self) -> Term {
+    fn to_term(&self, _graph: &mut Graph) -> Term {
         Term::Literal(self.to_literal())
     }
 

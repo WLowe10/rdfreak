@@ -40,10 +40,12 @@ impl RdfProperty for BlankNode {
         subject: &NamedOrBlankNode,
         predicate: &NamedNode,
     ) {
+        let object_term = self.to_term(graph);
+
         graph.insert(&Triple::new(
             subject.as_ref(),
             predicate.as_ref(),
-            self.to_term(),
+            object_term,
         ));
     }
 
@@ -73,10 +75,12 @@ impl RdfProperty for NamedNode {
         subject: &NamedOrBlankNode,
         predicate: &NamedNode,
     ) {
+        let object_term = self.to_term(graph);
+
         graph.insert(&Triple::new(
             subject.as_ref(),
             predicate.as_ref(),
-            self.to_term(),
+            object_term,
         ));
     }
 
@@ -106,10 +110,12 @@ impl RdfProperty for NamedOrBlankNode {
         subject: &NamedOrBlankNode,
         predicate: &NamedNode,
     ) {
+        let object_term = self.to_term(graph);
+
         graph.insert(&Triple::new(
             subject.as_ref(),
             predicate.as_ref(),
-            self.to_term(),
+            object_term,
         ));
     }
 
@@ -139,10 +145,12 @@ impl RdfProperty for Literal {
         subject: &NamedOrBlankNode,
         predicate: &NamedNode,
     ) {
+        let object_term = self.to_term(graph);
+
         graph.insert(&Triple::new(
             subject.as_ref(),
             predicate.as_ref(),
-            self.to_term(),
+            object_term,
         ));
     }
 
@@ -172,10 +180,12 @@ impl RdfProperty for Term {
         subject: &NamedOrBlankNode,
         predicate: &NamedNode,
     ) {
+        let object_term = self.to_term(graph);
+
         graph.insert(&Triple::new(
             subject.as_ref(),
             predicate.as_ref(),
-            self.to_term(),
+            object_term,
         ));
     }
 
@@ -203,10 +213,12 @@ impl RdfProperty for String {
         subject: &NamedOrBlankNode,
         predicate: &NamedNode,
     ) {
+        let object_term = self.to_term(graph);
+
         graph.insert(&Triple::new(
             subject.as_ref(),
             predicate.as_ref(),
-            self.to_term(),
+            object_term,
         ));
     }
 

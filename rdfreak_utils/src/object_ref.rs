@@ -26,7 +26,7 @@ impl<T: RdfObject> ObjectRef<T> {
 }
 
 impl<T: RdfObject> RdfObject for ObjectRef<T> {
-    fn to_term(&self) -> Term {
+    fn to_term(&self, _graph: &mut Graph) -> Term {
         // ObjectRef serializes to just a term. Could be a named node, blank node, or literal term.
         self.object_term.clone()
     }

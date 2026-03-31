@@ -166,7 +166,9 @@ pub fn derive_entity_impl(input: syn::DeriveInput) -> syn::Result<TokenStream> {
         }
 
         impl ::rdfreak::RdfObject for #struct_identifier {
-            fn to_term(&self) -> ::oxrdf::Term {
+            fn to_term(&self, graph: &mut ::oxrdf::Graph) -> ::oxrdf::Term {
+                ::rdfreak::Entity::serialize(self, graph);
+
                 let subject = ::rdfreak::Entity::get_subject(self);
 
                 match subject {
@@ -188,14 +190,12 @@ pub fn derive_entity_impl(input: syn::DeriveInput) -> syn::Result<TokenStream> {
 
         impl ::rdfreak::RdfProperty for #struct_identifier {
             fn serialize_property(&self, graph: &mut ::oxrdf::Graph, subject: &::oxrdf::NamedOrBlankNode, predicate: &::oxrdf::NamedNode) {
-                ::rdfreak::Entity::serialize(self, graph);
-
-                let term = ::rdfreak::RdfObject::to_term(self);
+                let object_term = ::rdfreak::RdfObject::to_term(self, graph);
 
                 graph.insert(&::oxrdf::Triple::new(
                     subject.as_ref(),
                     predicate.as_ref(),
-                    term,
+                    object_term,
                 ));
             }
 
@@ -360,7 +360,9 @@ mod tests {
             }
 
             impl ::rdfreak::RdfObject for Person {
-                fn to_term(&self) -> ::oxrdf::Term {
+                fn to_term(&self, graph: &mut ::oxrdf::Graph) -> ::oxrdf::Term {
+                    ::rdfreak::Entity::serialize(self, graph);
+
                     let subject = ::rdfreak::Entity::get_subject(self);
 
                     match subject {
@@ -382,14 +384,12 @@ mod tests {
 
             impl ::rdfreak::RdfProperty for Person {
                 fn serialize_property(&self, graph: &mut ::oxrdf::Graph, subject: &::oxrdf::NamedOrBlankNode, predicate: &::oxrdf::NamedNode) {
-                    ::rdfreak::Entity::serialize(self, graph);
-
-                    let term = ::rdfreak::RdfObject::to_term(self);
+                    let object_term = ::rdfreak::RdfObject::to_term(self, graph);
 
                     graph.insert(&::oxrdf::Triple::new(
                         subject.as_ref(),
                         predicate.as_ref(),
-                        term,
+                        object_term,
                     ));
                 }
 
