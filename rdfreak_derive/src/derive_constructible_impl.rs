@@ -30,13 +30,11 @@ pub fn derive_constructible_impl(input: syn::DeriveInput) -> syn::Result<TokenSt
     		let field_type = &field.ty;
             let predicate = attr.predicate.as_ref().unwrap();
 
-            let build_property_pattern_statement = quote! {
+            quote! {
                 <#field_type as ::rdfreak::ConstructibleRdfProperty>::build_patterns(construct_query_patterns, variable_generator, subject_variable, &::oxrdf::NamedNode::new_unchecked(#predicate));
-            };
-
-            Ok(build_property_pattern_statement)
+            }
         })
-        .collect::<Result<Vec<_>, syn::Error>>()?;
+        .collect::<Vec<_>>();
 
     let tokens = quote! {
         impl ::rdfreak::ConstructibleEntity for #struct_identifier {
@@ -86,7 +84,7 @@ mod tests {
         let input_tokens: syn::DeriveInput = syn::parse2(quote! {
             struct Person {
                 #[rdf(subject)]
-                iri: oxrdf::NamedNode,
+                subject: oxrdf::NamedOrBlankNode,
 
                 #[rdf(predicate = "http://example.org/name")]
                 name: String,

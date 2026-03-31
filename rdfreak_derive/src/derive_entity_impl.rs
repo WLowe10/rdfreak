@@ -84,13 +84,11 @@ pub fn derive_entity_impl(input: syn::DeriveInput) -> syn::Result<TokenStream> {
             let field_ident = field.ident.as_ref().unwrap();
             let predicate = attr.predicate.as_ref().unwrap();
 
-            let serialize_field_statement = quote! {
+            quote! {
                 ::rdfreak::RdfProperty::serialize_property(&self.#field_ident, graph, subject, &::oxrdf::NamedNode::new_unchecked(#predicate));
-            };
-
-            Ok(serialize_field_statement)
+            }
         })
-        .collect::<Result<Vec<_>, syn::Error>>()?;
+        .collect::<Vec<_>>();
 
     // generate code for deserializing each property
 
@@ -104,7 +102,7 @@ pub fn derive_entity_impl(input: syn::DeriveInput) -> syn::Result<TokenStream> {
             let predicate = attr.predicate.as_ref().unwrap();
             let field_name_str = syn::LitStr::new(&field_ident.to_string(), field_ident.span());
 
-            let deserialize_field = quote! {
+            quote! {
                 #field_ident: ::rdfreak::RdfProperty::deserialize_property(
                     graph,
                     subject,
@@ -114,11 +112,9 @@ pub fn derive_entity_impl(input: syn::DeriveInput) -> syn::Result<TokenStream> {
                     subject: subject.clone(),
                     source: Box::new(err),
                 })?,
-            };
-
-            Ok(deserialize_field)
+            }
         })
-        .collect::<Result<Vec<_>, syn::Error>>()?;
+        .collect::<Vec<_>>();
 
     let tokens = quote! {
         impl ::rdfreak::Entity for #struct_identifier {
@@ -223,7 +219,7 @@ mod tests {
         let input_tokens: syn::DeriveInput = syn::parse2(quote! {
             struct Person {
                 #[rdf(subject)]
-                iri: oxrdf::NamedNode,
+                subject: oxrdf::NamedOrBlankNode,
 
                 #[rdf(predicate = "http://example.org/name")]
                 name: String,
@@ -271,8 +267,8 @@ mod tests {
                 #[rdf(predicate = "http://example.org/age")]
                 age: u32,
 
-                #[rdf(predicate = "http://example.org/dateOfDeath")]
-                date_of_death: Option<String>,
+                #[rdf(predicate = "http://example.org/occupation")]
+                occupation: Option<String>,
             }
         })
         .unwrap();
@@ -292,7 +288,7 @@ mod tests {
 
                     ::rdfreak::RdfProperty::serialize_property(&self.name, graph, subject, &::oxrdf::NamedNode::new_unchecked("http://example.org/name"));
                     ::rdfreak::RdfProperty::serialize_property(&self.age, graph, subject, &::oxrdf::NamedNode::new_unchecked("http://example.org/age"));
-                    ::rdfreak::RdfProperty::serialize_property(&self.date_of_death, graph, subject, &::oxrdf::NamedNode::new_unchecked("http://example.org/dateOfDeath"));
+                    ::rdfreak::RdfProperty::serialize_property(&self.occupation, graph, subject, &::oxrdf::NamedNode::new_unchecked("http://example.org/occupation"));
                 }
 
                 fn deserialize_properties(graph: &::oxrdf::Graph, subject: &::oxrdf::NamedOrBlankNode) -> ::rdfreak::DeserializeEntityResult<Self> {
@@ -322,14 +318,14 @@ mod tests {
                                 source: Box::new(err),
                             }
                         )?,
-                        date_of_death: ::rdfreak::RdfProperty::deserialize_property(
+                        occupation: ::rdfreak::RdfProperty::deserialize_property(
                             graph,
                             subject,
-                            &::oxrdf::NamedNode::new_unchecked("http://example.org/dateOfDeath"),
+                            &::oxrdf::NamedNode::new_unchecked("http://example.org/occupation"),
                         )
                         .map_err(
                             |err| ::rdfreak::DeserializeEntityError::FailedToDeserializeProperty {
-                                property: "date_of_death".to_owned(),
+                                property: "occupation".to_owned(),
                                 subject: subject.clone(),
                                 source: Box::new(err),
                             }
