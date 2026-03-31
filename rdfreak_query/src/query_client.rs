@@ -66,6 +66,37 @@ impl QueryClient {
         }
     }
 
+    /// Queries the graph for all entities of type T.
+    pub async fn query_all<E: Entity + ConstructibleEntity>(&self) -> Result<Vec<E>, QueryError> {
+        let mut construct_query_patterns = SparqlConstructQueryPatterns::new();
+        let mut variable_generator = SparqlVariableGenerator::new();
+
+        let subject_variable = variable_generator.next().unwrap();
+
+        E::build_patterns(
+            &mut construct_query_patterns,
+            &mut variable_generator,
+            &subject_variable,
+        );
+
+        let query = format!(
+            "CONSTRUCT {{ {patterns} }} WHERE {{ {where_patterns} }}",
+            patterns = construct_query_patterns.patterns,
+            where_patterns = construct_query_patterns.where_patterns,
+        );
+
+        let result_graph = self
+            .graph_db
+            .query_graph(&query)
+            .await
+            .map_err(QueryError::FailedToQueryGraph)?;
+
+        let entities =
+            E::deserialize_all(&result_graph).map_err(QueryError::FailedToDeserializeResult)?;
+
+        Ok(entities)
+    }
+
     /// Inserts the given entity into the graph.
     pub async fn insert<E: Entity + ConstructibleEntity>(
         &self,
