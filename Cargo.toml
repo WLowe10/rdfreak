@@ -3,6 +3,7 @@ members = [
     "rdfreak",
     "rdfreak_derive",
     "rdfreak_utils",
+	"rdfreak_query"
 ]
 
 [workspace.package]

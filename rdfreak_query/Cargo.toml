@@ -1,0 +1,14 @@
+[package]
+name = "rdfreak_query"
+version = "0.1.0"
+description = "Query client for rdfreak"
+edition.workspace = true
+repository.workspace = true
+keywords.workspace = true
+license.workspace = true
+
+[dependencies]
+rdfreak = { path = "../rdfreak" }
+oxrdf = { workspace = true }
+thiserror = { workspace = true }
+async-trait = "0.1.89"
