@@ -1,6 +1,7 @@
 use std::{error::Error, sync::Arc};
 
-use oxrdf::NamedOrBlankNode;
+use oxrdf::{Graph, NamedOrBlankNode};
+use oxttl::TurtleSerializer;
 use rdfreak::{
     ConstructibleEntity, DeserializeEntityError, Entity, SparqlConstructQueryPatterns,
     SparqlVariableGenerator,
@@ -59,5 +60,31 @@ impl QueryClient {
             .map_err(QueryError::FailedToDeserializeResult)?;
 
         Ok(entity)
+    }
+
+    pub async fn insert<T: Entity + ConstructibleEntity>(
+        &self,
+        entity: &T,
+    ) -> Result<(), QueryError> {
+        let mut entity_graph = Graph::new();
+
+        entity.serialize(&mut entity_graph);
+
+        let mut serializer = TurtleSerializer::new().for_writer(Vec::new());
+
+        for entity_triple in entity_graph.iter() {
+            serializer.serialize_triple(entity_triple).unwrap();
+        }
+
+        let entity_ttl = String::from_utf8(serializer.finish().unwrap()).unwrap();
+
+        let query = format!("INSERT DATA {{ {0} }}", entity_ttl);
+
+        self.graph_db
+            .update(&query)
+            .await
+            .map_err(QueryError::FailedToQueryGraph)?;
+
+        Ok(())
     }
 }

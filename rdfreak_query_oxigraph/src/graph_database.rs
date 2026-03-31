@@ -38,4 +38,14 @@ impl GraphDatabase for OxigraphGraphDatabase {
 
         Ok(result_graph)
     }
+
+    async fn update(&self, query: &str) -> Result<(), Box<dyn Error>> {
+        SparqlEvaluator::new()
+            .parse_update(query)
+            .unwrap()
+            .on_store(&self.store)
+            .execute()?;
+
+        Ok(())
+    }
 }

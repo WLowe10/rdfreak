@@ -12,3 +12,4 @@ rdfreak = { path = "../rdfreak" }
 oxrdf = { workspace = true }
 thiserror = { workspace = true }
 async-trait = { workspace = true }
+oxttl = "0.2.3"

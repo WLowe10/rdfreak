@@ -7,4 +7,7 @@ use oxrdf::Graph;
 pub trait GraphDatabase {
     /// Executes a SPARQL construct query and returns the resulting graph.
     async fn query_graph(&self, query: &str) -> Result<Graph, Box<dyn Error>>;
+
+    /// Executes a SPARQL update query.
+    async fn update(&self, query: &str) -> Result<(), Box<dyn Error>>;
 }
