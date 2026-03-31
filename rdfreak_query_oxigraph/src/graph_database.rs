@@ -9,6 +9,12 @@ pub struct OxigraphGraphDatabase {
     store: oxigraph::store::Store,
 }
 
+impl OxigraphGraphDatabase {
+    pub fn new(store: oxigraph::store::Store) -> Self {
+        Self { store }
+    }
+}
+
 #[async_trait]
 impl GraphDatabase for OxigraphGraphDatabase {
     async fn query_graph(&self, query: &str) -> Result<Graph, Box<dyn Error>> {

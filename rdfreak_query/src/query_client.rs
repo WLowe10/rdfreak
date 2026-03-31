@@ -42,8 +42,11 @@ impl QueryClient {
         );
 
         let query = format!(
-            "CONSTRUCT {{ {0} }} WHERE {{ {1} }}",
-            construct_query_patterns.patterns, construct_query_patterns.where_patterns
+            "CONSTRUCT {{ {patterns} }} WHERE {{ VALUES {subject_var} {{ {subject_value} }} {where_patterns} }}",
+            subject_var = subject_variable,
+            subject_value = entity_subject,
+            patterns = construct_query_patterns.patterns,
+            where_patterns = construct_query_patterns.where_patterns,
         );
 
         let result_graph = self
