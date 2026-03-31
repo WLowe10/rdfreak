@@ -141,6 +141,25 @@ pub fn derive_entity_impl(input: syn::DeriveInput) -> syn::Result<TokenStream> {
         })
         .collect::<Result<Vec<_>, syn::Error>>()?;
 
+    // generate code for building construct patterns for each property
+
+    let build_property_patterns_statements = struct_data
+        .fields
+        .iter()
+        .zip(&property_attributes)
+        .filter(|(_, attr)| !attr.is_subject)
+        .map(|(field, attr)| {
+    		let field_type = &field.ty;
+            let predicate = attr.predicate.as_ref().unwrap();
+
+            let build_property_pattern_statement = quote! {
+                <#field_type as ::rdfreak::ConstructableRdfProperty>::build_patterns(construct_query_patterns, variable_generator, subject_variable, &::oxrdf::NamedNode::new_unchecked(#predicate));
+            };
+
+            Ok(build_property_pattern_statement)
+        })
+        .collect::<Result<Vec<_>, syn::Error>>()?;
+
     let tokens = quote! {
         impl ::rdfreak::Entity for #struct_identifier {
             fn get_rdf_type() -> ::oxrdf::NamedNode {
@@ -207,6 +226,40 @@ pub fn derive_entity_impl(input: syn::DeriveInput) -> syn::Result<TokenStream> {
                 let value = <Self as ::rdfreak::RdfObject>::from_term(graph, &object_term.into_owned())?;
 
                 Ok(value)
+            }
+        }
+
+        impl ::rdfreak::ConstructableEntity for #struct_identifier {
+            fn build_property_patterns(
+                construct_query_patterns: &mut ::rdfreak::SparqlConstructQueryPatterns,
+                variable_generator: &mut ::rdfreak::SparqlVariableGenerator,
+                subject_variable: &str,
+            ) {
+                #(#build_property_patterns_statements)*
+            }
+        }
+
+        impl ::rdfreak::ConstructableRdfProperty for #struct_identifier {
+            fn build_patterns(
+                construct_query_patterns: &mut ::rdfreak::SparqlConstructQueryPatterns,
+                variable_generator: &mut ::rdfreak::SparqlVariableGenerator,
+                subject_variable: &str,
+                predicate: &::oxrdf::NamedNode,
+            ) {
+                let object_variable = variable_generator.next().unwrap();
+
+                let triple_pattern = format!(
+                    "\t{} {} {} .\n",
+                    subject_variable, predicate, object_variable
+                );
+
+                construct_query_patterns.patterns.push_str(&triple_pattern);
+
+                construct_query_patterns
+                    .where_patterns
+                    .push_str(&triple_pattern);
+
+                <Self as ::rdfreak::ConstructableEntity>::build_patterns(construct_query_patterns, variable_generator, &object_variable);
             }
         }
     };

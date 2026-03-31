@@ -117,9 +117,8 @@ pub trait ConstructableEntity: Entity {
     fn build_patterns(
         construct_query_patterns: &mut SparqlConstructQueryPatterns,
         variable_generator: &mut SparqlVariableGenerator,
+        subject_variable: &str,
     ) {
-        let subject_variable = variable_generator.next().unwrap();
-
         let rdf_type_triple_pattern = format!(
             "\t{} {} {} .\n",
             subject_variable,
@@ -138,7 +137,7 @@ pub trait ConstructableEntity: Entity {
         Self::build_property_patterns(
             construct_query_patterns,
             variable_generator,
-            &subject_variable,
+            subject_variable,
         );
     }
 }
