@@ -456,6 +456,42 @@ mod tests {
                     Ok(value)
                 }
             }
+
+            impl ::rdfreak::ConstructibleEntity for Person {
+                fn build_property_patterns(
+                    construct_query_patterns: &mut ::rdfreak::SparqlConstructQueryPatterns,
+                    variable_generator: &mut ::rdfreak::SparqlVariableGenerator,
+                    subject_variable: &str,
+                ) {
+                    <String as ::rdfreak::ConstructibleRdfProperty>::build_patterns(construct_query_patterns, variable_generator, subject_variable, &::oxrdf::NamedNode::new_unchecked("http://example.org/name"));
+                    <u32 as ::rdfreak::ConstructibleRdfProperty>::build_patterns(construct_query_patterns, variable_generator, subject_variable, &::oxrdf::NamedNode::new_unchecked("http://example.org/age"));
+                    <Option<String> as ::rdfreak::ConstructibleRdfProperty>::build_patterns(construct_query_patterns, variable_generator, subject_variable, &::oxrdf::NamedNode::new_unchecked("http://example.org/dateOfDeath"));
+                }
+            }
+
+            impl ::rdfreak::ConstructibleRdfProperty for Person {
+                fn build_patterns(
+                    construct_query_patterns: &mut ::rdfreak::SparqlConstructQueryPatterns,
+                    variable_generator: &mut ::rdfreak::SparqlVariableGenerator,
+                    subject_variable: &str,
+                    predicate: &::oxrdf::NamedNode,
+                ) {
+                    let object_variable = variable_generator.next().unwrap();
+
+                    let triple_pattern = format!(
+                        "\t{} {} {} .\n",
+                        subject_variable, predicate, object_variable
+                    );
+
+                    construct_query_patterns.patterns.push_str(&triple_pattern);
+
+                    construct_query_patterns
+                        .where_patterns
+                        .push_str(&triple_pattern);
+
+                    <Self as ::rdfreak::ConstructibleEntity>::build_patterns(construct_query_patterns, variable_generator, &object_variable);
+                }
+            }
         };
 
         let generated = derive_entity_impl(input_tokens).unwrap();
