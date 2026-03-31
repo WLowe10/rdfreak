@@ -2,20 +2,12 @@ use darling::FromMeta;
 use proc_macro2::TokenStream;
 use quote::quote;
 
-use crate::utils::get_rdf_attribute;
+use crate::utils::{get_rdf_attribute, parse_struct_field_rdf_attributes};
 
 #[derive(Debug, FromMeta)]
 struct EntityStructRdfAttributes {
     #[darling(rename = "type")]
     rdf_type: String,
-}
-
-#[derive(Debug, FromMeta)]
-struct StructFieldRdfAttributes {
-    #[darling(default, rename = "subject")]
-    is_subject: bool,
-
-    predicate: Option<String>,
 }
 
 /// parses the expected RDF attributes from an entity struct-level attribute
@@ -25,19 +17,6 @@ fn parse_struct_rdf_attributes(input: &syn::DeriveInput) -> syn::Result<EntitySt
     })?;
 
     EntityStructRdfAttributes::from_meta(&attr.meta)
-        .map_err(|err| syn::Error::new_spanned(attr, err))
-}
-
-/// parses the expected RDF attributes from a struct field-level attribute
-fn parse_struct_field_rdf_attributes(field: &syn::Field) -> syn::Result<StructFieldRdfAttributes> {
-    let attr = get_rdf_attribute(&field.attrs).ok_or_else(|| {
-        syn::Error::new_spanned(
-            field,
-            "Missing required attribute: #[rdf(predicate = \"...\")]",
-        )
-    })?;
-
-    StructFieldRdfAttributes::from_meta(&attr.meta)
         .map_err(|err| syn::Error::new_spanned(attr, err))
 }
 
@@ -141,25 +120,6 @@ pub fn derive_entity_impl(input: syn::DeriveInput) -> syn::Result<TokenStream> {
         })
         .collect::<Result<Vec<_>, syn::Error>>()?;
 
-    // generate code for building construct patterns for each property
-
-    let build_property_patterns_statements = struct_data
-        .fields
-        .iter()
-        .zip(&property_attributes)
-        .filter(|(_, attr)| !attr.is_subject)
-        .map(|(field, attr)| {
-    		let field_type = &field.ty;
-            let predicate = attr.predicate.as_ref().unwrap();
-
-            let build_property_pattern_statement = quote! {
-                <#field_type as ::rdfreak::ConstructibleRdfProperty>::build_patterns(construct_query_patterns, variable_generator, subject_variable, &::oxrdf::NamedNode::new_unchecked(#predicate));
-            };
-
-            Ok(build_property_pattern_statement)
-        })
-        .collect::<Result<Vec<_>, syn::Error>>()?;
-
     let tokens = quote! {
         impl ::rdfreak::Entity for #struct_identifier {
             fn get_rdf_type() -> ::oxrdf::NamedNode {
@@ -226,40 +186,6 @@ pub fn derive_entity_impl(input: syn::DeriveInput) -> syn::Result<TokenStream> {
                 let value = <Self as ::rdfreak::RdfObject>::from_term(graph, &object_term.into_owned())?;
 
                 Ok(value)
-            }
-        }
-
-        impl ::rdfreak::ConstructibleEntity for #struct_identifier {
-            fn build_property_patterns(
-                construct_query_patterns: &mut ::rdfreak::SparqlConstructQueryPatterns,
-                variable_generator: &mut ::rdfreak::SparqlVariableGenerator,
-                subject_variable: &str,
-            ) {
-                #(#build_property_patterns_statements)*
-            }
-        }
-
-        impl ::rdfreak::ConstructibleRdfProperty for #struct_identifier {
-            fn build_patterns(
-                construct_query_patterns: &mut ::rdfreak::SparqlConstructQueryPatterns,
-                variable_generator: &mut ::rdfreak::SparqlVariableGenerator,
-                subject_variable: &str,
-                predicate: &::oxrdf::NamedNode,
-            ) {
-                let object_variable = variable_generator.next().unwrap();
-
-                let triple_pattern = format!(
-                    "\t{} {} {} .\n",
-                    subject_variable, predicate, object_variable
-                );
-
-                construct_query_patterns.patterns.push_str(&triple_pattern);
-
-                construct_query_patterns
-                    .where_patterns
-                    .push_str(&triple_pattern);
-
-                <Self as ::rdfreak::ConstructibleEntity>::build_patterns(construct_query_patterns, variable_generator, &object_variable);
             }
         }
     };
@@ -454,42 +380,6 @@ mod tests {
                     let value = <Self as ::rdfreak::RdfObject>::from_term(graph, &object_term.into_owned())?;
 
                     Ok(value)
-                }
-            }
-
-            impl ::rdfreak::ConstructibleEntity for Person {
-                fn build_property_patterns(
-                    construct_query_patterns: &mut ::rdfreak::SparqlConstructQueryPatterns,
-                    variable_generator: &mut ::rdfreak::SparqlVariableGenerator,
-                    subject_variable: &str,
-                ) {
-                    <String as ::rdfreak::ConstructibleRdfProperty>::build_patterns(construct_query_patterns, variable_generator, subject_variable, &::oxrdf::NamedNode::new_unchecked("http://example.org/name"));
-                    <u32 as ::rdfreak::ConstructibleRdfProperty>::build_patterns(construct_query_patterns, variable_generator, subject_variable, &::oxrdf::NamedNode::new_unchecked("http://example.org/age"));
-                    <Option<String> as ::rdfreak::ConstructibleRdfProperty>::build_patterns(construct_query_patterns, variable_generator, subject_variable, &::oxrdf::NamedNode::new_unchecked("http://example.org/dateOfDeath"));
-                }
-            }
-
-            impl ::rdfreak::ConstructibleRdfProperty for Person {
-                fn build_patterns(
-                    construct_query_patterns: &mut ::rdfreak::SparqlConstructQueryPatterns,
-                    variable_generator: &mut ::rdfreak::SparqlVariableGenerator,
-                    subject_variable: &str,
-                    predicate: &::oxrdf::NamedNode,
-                ) {
-                    let object_variable = variable_generator.next().unwrap();
-
-                    let triple_pattern = format!(
-                        "\t{} {} {} .\n",
-                        subject_variable, predicate, object_variable
-                    );
-
-                    construct_query_patterns.patterns.push_str(&triple_pattern);
-
-                    construct_query_patterns
-                        .where_patterns
-                        .push_str(&triple_pattern);
-
-                    <Self as ::rdfreak::ConstructibleEntity>::build_patterns(construct_query_patterns, variable_generator, &object_variable);
                 }
             }
         };
