@@ -31,7 +31,7 @@ impl QueryClient {
     pub async fn query_single<E: Entity + ConstructibleEntity>(
         &self,
         entity_subject: &NamedOrBlankNode,
-    ) -> Result<E, QueryError> {
+    ) -> Result<Option<E>, QueryError> {
         let mut construct_query_patterns = SparqlConstructQueryPatterns::new();
         let mut variable_generator = SparqlVariableGenerator::new();
 
@@ -57,10 +57,13 @@ impl QueryClient {
             .await
             .map_err(QueryError::FailedToQueryGraph)?;
 
-        let entity = E::deserialize(&result_graph, entity_subject)
-            .map_err(QueryError::FailedToDeserializeResult)?;
+        let entity_result = E::deserialize(&result_graph, entity_subject);
 
-        Ok(entity)
+        match entity_result {
+            Ok(entity) => Ok(Some(entity)),
+            Err(DeserializeEntityError::InvalidRdfType { .. }) => Ok(None),
+            Err(err) => Err(QueryError::FailedToDeserializeResult(err)),
+        }
     }
 
     /// Inserts the given entity into the graph.
