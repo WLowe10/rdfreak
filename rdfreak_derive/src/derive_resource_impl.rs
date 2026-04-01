@@ -6,11 +6,11 @@ use crate::utils::{
     validate_all_struct_field_rdf_attributes,
 };
 
-pub fn derive_entity_impl(input: syn::DeriveInput) -> syn::Result<TokenStream> {
+pub fn derive_resource_impl(input: syn::DeriveInput) -> syn::Result<TokenStream> {
     let syn::Data::Struct(struct_data) = &input.data else {
         return Err(syn::Error::new_spanned(
             input,
-            "Entity can only be derived for structs",
+            "Resource can only be derived for structs",
         ));
     };
 
@@ -38,7 +38,7 @@ pub fn derive_entity_impl(input: syn::DeriveInput) -> syn::Result<TokenStream> {
     let subject_identifier = subject_field.ident.as_ref().unwrap();
 
     let tokens = quote! {
-        impl ::rdfreak::Entity for #struct_identifier {
+        impl ::rdfreak::Resource for #struct_identifier {
             fn get_rdf_type() -> ::oxrdf::NamedNode {
                 ::oxrdf::NamedNode::new_unchecked(#struct_rdf_type)
             }
@@ -66,12 +66,12 @@ mod tests {
             }
         };
 
-        let derive_error = derive_entity_impl(input_tokens).err().unwrap();
+        let derive_error = derive_resource_impl(input_tokens).err().unwrap();
 
         assert!(
             derive_error
                 .to_string()
-                .contains("Entity can only be derived for structs")
+                .contains("Resource can only be derived for structs")
         );
     }
 
@@ -90,7 +90,7 @@ mod tests {
             }
         };
 
-        let derive_error = derive_entity_impl(input_tokens).err().unwrap();
+        let derive_error = derive_resource_impl(input_tokens).err().unwrap();
 
         pretty_assertions::assert_eq!(
             derive_error.to_string(),
@@ -118,7 +118,7 @@ mod tests {
         };
 
         let expected = quote! {
-            impl ::rdfreak::Entity for Person {
+            impl ::rdfreak::Resource for Person {
                 fn get_rdf_type() -> ::oxrdf::NamedNode {
                     ::oxrdf::NamedNode::new_unchecked("http://example.org/Person")
                 }
@@ -129,7 +129,7 @@ mod tests {
             }
         };
 
-        let generated = derive_entity_impl(input_tokens).unwrap();
+        let generated = derive_resource_impl(input_tokens).unwrap();
 
         pretty_assertions::assert_eq!(generated.to_string(), expected.to_string());
     }

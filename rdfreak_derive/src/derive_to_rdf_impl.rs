@@ -46,12 +46,12 @@ pub fn derive_to_rdf_impl(input: syn::DeriveInput) -> syn::Result<TokenStream> {
     let tokens = quote! {
         impl ::rdfreak::ToRdf for #struct_identifier {
             fn to_rdf(&self, graph: &mut ::oxrdf::Graph) {
-                let subject = ::rdfreak::Entity::get_subject(self);
+                let subject = ::rdfreak::Resource::get_subject(self);
 
                 graph.insert(&::oxrdf::Triple::new(
-                    <Self as ::rdfreak::Entity>::get_subject(self).as_ref(),
+                    <Self as ::rdfreak::Resource>::get_subject(self).as_ref(),
                     ::oxrdf::NamedNode::new_unchecked("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
-                    <Self as ::rdfreak::Entity>::get_rdf_type().as_ref(),
+                    <Self as ::rdfreak::Resource>::get_rdf_type().as_ref(),
                 ));
 
                 #(#serialize_property_statements)*
@@ -62,7 +62,7 @@ pub fn derive_to_rdf_impl(input: syn::DeriveInput) -> syn::Result<TokenStream> {
             fn to_term(&self, graph: &mut ::oxrdf::Graph) -> ::oxrdf::Term {
                 ::rdfreak::ToRdf::to_rdf(self, graph);
 
-                let subject = ::rdfreak::Entity::get_subject(self);
+                let subject = ::rdfreak::Resource::get_subject(self);
 
                 match subject {
                     NamedOrBlankNode::NamedNode(named_node) => Term::NamedNode(named_node.clone()),
@@ -113,12 +113,12 @@ mod tests {
         let expected = quote! {
             impl ::rdfreak::ToRdf for Person {
                 fn to_rdf(&self, graph: &mut ::oxrdf::Graph) {
-                    let subject = ::rdfreak::Entity::get_subject(self);
+                    let subject = ::rdfreak::Resource::get_subject(self);
 
                     graph.insert(&::oxrdf::Triple::new(
-                        <Self as ::rdfreak::Entity>::get_subject(self).as_ref(),
+                        <Self as ::rdfreak::Resource>::get_subject(self).as_ref(),
                         ::oxrdf::NamedNode::new_unchecked("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
-                        <Self as ::rdfreak::Entity>::get_rdf_type().as_ref(),
+                        <Self as ::rdfreak::Resource>::get_rdf_type().as_ref(),
                     ));
 
                     ::rdfreak::SerializeRdfProperty::serialize_property(&self.name, graph, subject, &::oxrdf::NamedNode::new_unchecked("http://example.org/name"));
@@ -131,7 +131,7 @@ mod tests {
                 fn to_term(&self, graph: &mut ::oxrdf::Graph) -> ::oxrdf::Term {
                     ::rdfreak::ToRdf::to_rdf(self, graph);
 
-                    let subject = ::rdfreak::Entity::get_subject(self);
+                    let subject = ::rdfreak::Resource::get_subject(self);
 
                     match subject {
                         NamedOrBlankNode::NamedNode(named_node) => Term::NamedNode(named_node.clone()),

@@ -53,7 +53,7 @@ pub fn derive_constructible_impl(input: syn::DeriveInput) -> syn::Result<TokenSt
                 let rdf_type_triple_pattern = ::rdfreak::TriplePattern::new(
                     ::rdfreak::TriplePatternNode::Variable(subject_variable.to_owned()),
                     ::rdfreak::TriplePatternNode::NamedNode(::oxrdf::NamedNode::new_unchecked("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")),
-                    ::rdfreak::TriplePatternNode::NamedNode(<Self as ::rdfreak::Entity>::get_rdf_type()),
+                    ::rdfreak::TriplePatternNode::NamedNode(<Self as ::rdfreak::Resource>::get_rdf_type()),
                 );
 
                 construct_query_patterns
@@ -118,7 +118,7 @@ mod tests {
                     let rdf_type_triple_pattern = ::rdfreak::TriplePattern::new(
                         ::rdfreak::TriplePatternNode::Variable(subject_variable.to_owned()),
                         ::rdfreak::TriplePatternNode::NamedNode(::oxrdf::NamedNode::new_unchecked("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")),
-                        ::rdfreak::TriplePatternNode::NamedNode(<Self as ::rdfreak::Entity>::get_rdf_type()),
+                        ::rdfreak::TriplePatternNode::NamedNode(<Self as ::rdfreak::Resource>::get_rdf_type()),
                     );
 
                     construct_query_patterns

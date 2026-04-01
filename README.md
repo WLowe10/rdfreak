@@ -1,6 +1,6 @@
 # rdfreak
 
-Library for mapping rust types to RDF entities. rdfreak is built on top of types in the [oxigraph](https://github.com/oxigraph/oxigraph) ecosystem.
+Library for mapping rust types to RDF resources. rdfreak is built on top of types in the [oxigraph](https://github.com/oxigraph/oxigraph) ecosystem.
 
 ## Install
 
@@ -13,13 +13,15 @@ cargo add rdfreak_derive
 
 ### Declaring Entities
 
-The easiest way to declare an entity is using the derive macro from `rdfreak_derive`. When using the derive macro, one field of your entity struct must be marked with `#[rdf(subject)]`, and the rest must be marked with `#[rdf(predicate = "")]`.
+The easiest way to declare a resource is using the derive macro from `rdfreak_derive`. When using the derive macro, one field of your resource struct must be marked with `#[rdf(subject)]`, and the rest must be marked with `#[rdf(predicate = "")]`.
 
 ```rust
 use oxrdf::NamedOrBlankNode;
-use rdfreak_derive::Entity;
 
-#[derive(Debug, Entity)]
+use rdfreak::{Resource, ToRdf, FromRdf};
+use rdfreak_derive::{Resource, ToRdf, FromRdf};
+
+#[derive(Debug, Resource, ToRdf, FromRdf)]
 #[rdf(type = "http://example.com/Animal")]
 struct Animal {
     #[rdf(subject)]
@@ -29,7 +31,7 @@ struct Animal {
     name: String,
 }
 
-#[derive(Debug, Entity)]
+#[derive(Debug, Resource, ToRdf, FromRdf)]
 #[rdf(type = "http://example.com/Person")]
 struct Person {
     #[rdf(subject)]
@@ -43,10 +45,10 @@ struct Person {
 }
 ```
 
-### Serializing & Deserializing Entities
+### Serializing & Deserializing Resources
 
 ```rs
-// serialize entity into RDF
+// serialize resource into RDF
 
 let person = Person {
 	subject: NamedNode::new_unchecked("http://example.com/people/Alice").into(),
@@ -65,13 +67,8 @@ let person = Person {
 
 let mut graph = oxrdf::Graph::new();
 
-person.serialize(&mut graph);
+person.to_rdf(&mut graph);
 
-// deserialize entity from RDF
-let deserialized_person = Person::deserialize(&graph, &person.subject).unwrap();
-
-let deserialized_rufus = Animal::deserialize(&graph, &NamedNode::new_unchecked("http://example.com/animals/Rufus").into())
-
-// you can also deserialize all of a certain entity from a graph at once
-let all_people = Person::deserialize_all(&graph).unwrap();
+// deserialize resource from RDF
+let deserialized_person = Person::from_rdf(&graph, &person.subject).unwrap();
 ```

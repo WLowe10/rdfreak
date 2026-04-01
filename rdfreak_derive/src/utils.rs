@@ -6,20 +6,20 @@ pub fn get_rdf_attribute(attributes: &[syn::Attribute]) -> Option<&syn::Attribut
 }
 
 #[derive(Debug, FromMeta)]
-pub struct EntityStructRdfAttributes {
+pub struct ResourceStructRdfAttributes {
     #[darling(rename = "type")]
     pub rdf_type: String,
 }
 
-/// parses the expected RDF attributes from an entity struct-level attribute
+/// parses the expected RDF attributes from a resource struct-level attribute
 pub fn parse_struct_rdf_attributes(
     input: &syn::DeriveInput,
-) -> syn::Result<EntityStructRdfAttributes> {
+) -> syn::Result<ResourceStructRdfAttributes> {
     let attr = get_rdf_attribute(&input.attrs).ok_or_else(|| {
         syn::Error::new_spanned(input, "Missing required attribute: #[rdf(type = \"...\")]")
     })?;
 
-    EntityStructRdfAttributes::from_meta(&attr.meta)
+    ResourceStructRdfAttributes::from_meta(&attr.meta)
         .map_err(|err| syn::Error::new_spanned(attr, err))
 }
 

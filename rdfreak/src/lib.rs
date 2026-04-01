@@ -13,8 +13,8 @@ pub use object::*;
 pub mod property;
 pub use property::*;
 
-pub mod entity;
-pub use entity::*;
+pub mod resource;
+pub use resource::*;
 
 pub mod sparql_variable_generator;
 pub use sparql_variable_generator::*;

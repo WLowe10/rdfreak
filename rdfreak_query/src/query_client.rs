@@ -3,7 +3,7 @@ use std::{error::Error, sync::Arc};
 use oxrdf::{Graph, NamedOrBlankNode};
 use oxttl::TurtleSerializer;
 use rdfreak::{
-    ConstructQueryPatterns, Constructible, DeserializeResourceError, Entity, FromRdf,
+    ConstructQueryPatterns, Constructible, DeserializeResourceError, FromRdf, Resource,
     SparqlVariableGenerator, ToRdf, TriplePattern,
 };
 
@@ -35,17 +35,17 @@ impl QueryClient {
         Self { graph_db }
     }
 
-    /// Queries the graph for a single entity of type T with the given subject.
-    pub async fn query_single<E: Entity + FromRdf + Constructible>(
+    /// Queries the graph for a single resource of type T with the given subject.
+    pub async fn query_single<T: Resource + FromRdf + Constructible>(
         &self,
-        entity_subject: &NamedOrBlankNode,
-    ) -> Result<Option<E>, QueryError> {
+        resource_subject: &NamedOrBlankNode,
+    ) -> Result<Option<T>, QueryError> {
         let mut construct_query_patterns = ConstructQueryPatterns::new();
         let mut variable_generator = SparqlVariableGenerator::new();
 
         let subject_variable = variable_generator.next().unwrap();
 
-        E::insert_patterns(
+        T::insert_patterns(
             &mut construct_query_patterns,
             &mut variable_generator,
             &subject_variable,
@@ -54,7 +54,7 @@ impl QueryClient {
         let query = format!(
             "CONSTRUCT {{ {template_patterns} }} WHERE {{ VALUES ?{subject_var} {{ {subject_value} }} {where_patterns} }}",
             subject_var = subject_variable,
-            subject_value = entity_subject,
+            subject_value = resource_subject,
             template_patterns = format_triple_patterns(&construct_query_patterns.template_patterns),
             where_patterns = construct_query_patterns.where_pattern
         );
@@ -65,23 +65,23 @@ impl QueryClient {
             .await
             .map_err(QueryError::FailedToQueryGraph)?;
 
-        let entity_result = E::from_rdf(&result_graph, entity_subject);
+        let resource_result = T::from_rdf(&result_graph, resource_subject);
 
-        match entity_result {
-            Ok(entity) => Ok(Some(entity)),
+        match resource_result {
+            Ok(resource) => Ok(Some(resource)),
             Err(DeserializeResourceError::InvalidRdfType { .. }) => Ok(None),
             Err(err) => Err(QueryError::FailedToDeserializeResource(err)),
         }
     }
 
-    /// Queries the graph for all entities of type T.
-    pub async fn query_all<E: Entity + Constructible>(&self) -> Result<Vec<E>, QueryError> {
+    /// Queries the graph for all resources of type T.
+    pub async fn query_all<T: Resource + Constructible>(&self) -> Result<Vec<T>, QueryError> {
         let mut construct_query_patterns = ConstructQueryPatterns::new();
         let mut variable_generator = SparqlVariableGenerator::new();
 
         let subject_variable = variable_generator.next().unwrap();
 
-        E::insert_patterns(
+        T::insert_patterns(
             &mut construct_query_patterns,
             &mut variable_generator,
             &subject_variable,
@@ -107,24 +107,24 @@ impl QueryClient {
         todo!()
     }
 
-    /// Inserts the given entity into the graph.
-    pub async fn insert<E: Entity + ToRdf + Constructible>(
+    /// Inserts the given resource into the graph.
+    pub async fn insert<T: Resource + ToRdf + Constructible>(
         &self,
-        entity: &E,
+        resource: &T,
     ) -> Result<(), QueryError> {
-        let mut entity_graph = Graph::new();
+        let mut resource_graph = Graph::new();
 
-        entity.to_rdf(&mut entity_graph);
+        resource.to_rdf(&mut resource_graph);
 
         let mut serializer = TurtleSerializer::new().for_writer(Vec::new());
 
-        for entity_triple in entity_graph.iter() {
-            serializer.serialize_triple(entity_triple).unwrap();
+        for resource_triple in resource_graph.iter() {
+            serializer.serialize_triple(resource_triple).unwrap();
         }
 
-        let entity_ttl = String::from_utf8(serializer.finish().unwrap()).unwrap();
+        let resource_ttl = String::from_utf8(serializer.finish().unwrap()).unwrap();
 
-        let query = format!("INSERT DATA {{ {0} }}", entity_ttl);
+        let query = format!("INSERT DATA {{ {0} }}", resource_ttl);
 
         self.graph_db
             .update(&query)
@@ -134,12 +134,12 @@ impl QueryClient {
         Ok(())
     }
 
-    /// Saves the given entity to the graph.
+    /// Saves the given resource to the graph.
     ///
     /// This is basically both an insert and a delete (upsert).
-    pub async fn save<E: Entity + ToRdf + Constructible>(
+    pub async fn save<T: Resource + ToRdf + Constructible>(
         &self,
-        entity: &E,
+        resource: &T,
     ) -> Result<(), QueryError> {
         // this is basically both an insert and a delete.
 
@@ -150,35 +150,35 @@ impl QueryClient {
 
         let subject_variable = variable_generator.next().unwrap();
 
-        E::insert_patterns(
+        T::insert_patterns(
             &mut construct_query_patterns,
             &mut variable_generator,
             &subject_variable,
         );
 
-        // 2) serialize the entity to ttl
+        // 2) serialize the resource to ttl
 
-        let mut entity_graph = Graph::new();
+        let mut resource_graph = Graph::new();
 
-        entity.to_rdf(&mut entity_graph);
+        resource.to_rdf(&mut resource_graph);
 
         let mut serializer = TurtleSerializer::new().for_writer(Vec::new());
 
-        for entity_triple in entity_graph.iter() {
-            serializer.serialize_triple(entity_triple).unwrap();
+        for resource_triple in resource_graph.iter() {
+            serializer.serialize_triple(resource_triple).unwrap();
         }
 
-        let entity_ttl = String::from_utf8(serializer.finish().unwrap()).unwrap();
+        let resource_ttl = String::from_utf8(serializer.finish().unwrap()).unwrap();
 
         // 3) build the query
 
         let query = format!(
-            "DELETE {{ {template_patterns} }} INSERT {{ {entity_ttl} }} WHERE {{ VALUES ?{subject_var} {{ {subject_value} }} {where_patterns} }}",
+            "DELETE {{ {template_patterns} }} INSERT {{ {resource_ttl} }} WHERE {{ VALUES ?{subject_var} {{ {subject_value} }} {where_patterns} }}",
             subject_var = subject_variable,
-            subject_value = entity.get_subject(),
+            subject_value = resource.get_subject(),
             template_patterns = format_triple_patterns(&construct_query_patterns.template_patterns),
             where_patterns = construct_query_patterns.where_pattern,
-            entity_ttl = entity_ttl,
+            resource_ttl = resource_ttl,
         );
 
         // 4) execute the query
@@ -191,17 +191,17 @@ impl QueryClient {
         Ok(())
     }
 
-    /// Deletes the entity with the given subject from the graph.
-    pub async fn delete<E: Entity + Constructible>(
+    /// Deletes the resource with the given subject from the graph.
+    pub async fn delete<T: Resource + Constructible>(
         &self,
-        entity_subject: &NamedOrBlankNode,
+        resource_subject: &NamedOrBlankNode,
     ) -> Result<(), QueryError> {
         let mut construct_query_patterns = ConstructQueryPatterns::new();
         let mut variable_generator = SparqlVariableGenerator::new();
 
         let subject_variable = variable_generator.next().unwrap();
 
-        E::insert_patterns(
+        T::insert_patterns(
             &mut construct_query_patterns,
             &mut variable_generator,
             &subject_variable,
@@ -210,7 +210,7 @@ impl QueryClient {
         let query = format!(
             "DELETE {{ {template_patterns} }} WHERE {{ VALUES ?{subject_var} {{ {subject_value} }} {where_patterns} }}",
             subject_var = subject_variable,
-            subject_value = entity_subject,
+            subject_value = resource_subject,
             template_patterns = format_triple_patterns(&construct_query_patterns.template_patterns),
             where_patterns = construct_query_patterns.where_pattern,
         );

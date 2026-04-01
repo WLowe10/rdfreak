@@ -67,7 +67,7 @@ pub fn derive_from_rdf_impl(input: syn::DeriveInput) -> syn::Result<TokenStream>
             fn from_rdf(graph: &::oxrdf::Graph, subject: &::oxrdf::NamedOrBlankNode) -> ::rdfreak::DeserializeResourceResult<Self> {
                 use ::rdfreak::DeserializeRdfProperty;
 
-                let expected_rdf_type = <Self as ::rdfreak::Entity>::get_rdf_type();
+                let expected_rdf_type = <Self as ::rdfreak::Resource>::get_rdf_type();
 
                 let rdf_types = Vec::<::rdfreak::RdfType>::deserialize_property(
                     graph,
@@ -157,7 +157,7 @@ mod tests {
                 fn from_rdf(graph: &::oxrdf::Graph, subject: &::oxrdf::NamedOrBlankNode) -> ::rdfreak::DeserializeResourceResult<Self> {
                     use ::rdfreak::DeserializeRdfProperty;
 
-                    let expected_rdf_type = <Self as ::rdfreak::Entity>::get_rdf_type();
+                    let expected_rdf_type = <Self as ::rdfreak::Resource>::get_rdf_type();
 
                     let rdf_types = Vec::<::rdfreak::RdfType>::deserialize_property(
                         graph,
