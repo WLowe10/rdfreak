@@ -31,43 +31,50 @@ pub fn derive_constructible_impl(input: syn::DeriveInput) -> syn::Result<TokenSt
             let predicate = attr.predicate.as_ref().unwrap();
 
             quote! {
-                <#field_type as ::rdfreak::ConstructibleRdfProperty>::build_patterns(construct_query_patterns, variable_generator, subject_variable, &::oxrdf::NamedNode::new_unchecked(#predicate));
+                <#field_type as ::rdfreak::ConstructibleField>::insert_patterns(construct_query_patterns, variable_generator, subject_variable, &::oxrdf::NamedNode::new_unchecked(#predicate));
             }
         })
         .collect::<Vec<_>>();
 
     let tokens = quote! {
-        impl ::rdfreak::ConstructibleEntity for #struct_identifier {
-            fn build_property_patterns(
-                construct_query_patterns: &mut ::rdfreak::SparqlConstructQueryPatterns,
+        impl ::rdfreak::Constructible for #struct_identifier {
+            fn insert_patterns(
+                construct_query_patterns: &mut ::rdfreak::ConstructQueryPatterns,
                 variable_generator: &mut ::rdfreak::SparqlVariableGenerator,
                 subject_variable: &str,
             ) {
+                let rdf_type_triple_pattern = ::rdfreak::TriplePattern::new(
+                    ::rdfreak::TriplePatternNode::Variable(subject_variable.to_owned()),
+                    ::rdfreak::TriplePatternNode::NamedNode(::oxrdf::NamedNode::new_unchecked("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")),
+                    ::rdfreak::TriplePatternNode::NamedNode(<Self as ::rdfreak::Entity>::get_rdf_type()),
+                );
+
+                construct_query_patterns
+                    .push_identical_triple_pattern(rdf_type_triple_pattern);
+
                 #(#build_property_patterns_statements)*
             }
         }
 
-        impl ::rdfreak::ConstructibleRdfProperty for #struct_identifier {
-            fn build_patterns(
-                construct_query_patterns: &mut ::rdfreak::SparqlConstructQueryPatterns,
+        impl ::rdfreak::ConstructibleField for #struct_identifier {
+            fn insert_patterns(
+                construct_query_patterns: &mut ::rdfreak::ConstructQueryPatterns,
                 variable_generator: &mut ::rdfreak::SparqlVariableGenerator,
                 subject_variable: &str,
                 predicate: &::oxrdf::NamedNode,
             ) {
                 let object_variable = variable_generator.next().unwrap();
 
-                let triple_pattern = format!(
-                    "\t{} {} {} .\n",
-                    subject_variable, predicate, object_variable
+                let triple_pattern = ::rdfreak::TriplePattern::new(
+                    ::rdfreak::TriplePatternNode::Variable(subject_variable.to_owned()),
+                    ::rdfreak::TriplePatternNode::NamedNode(predicate.clone()),
+                    ::rdfreak::TriplePatternNode::Variable(object_variable.clone()),
                 );
 
-                construct_query_patterns.patterns.push_str(&triple_pattern);
-
                 construct_query_patterns
-                    .where_patterns
-                    .push_str(&triple_pattern);
+                    .push_identical_triple_pattern(triple_pattern);
 
-                <Self as ::rdfreak::ConstructibleEntity>::build_patterns(construct_query_patterns, variable_generator, &object_variable);
+                <Self as ::rdfreak::Constructible>::insert_patterns(construct_query_patterns, variable_generator, &object_variable);
             }
         }
     };
@@ -96,38 +103,45 @@ mod tests {
         .unwrap();
 
         let expected = quote! {
-            impl ::rdfreak::ConstructibleEntity for Person {
-                fn build_property_patterns(
-                    construct_query_patterns: &mut ::rdfreak::SparqlConstructQueryPatterns,
+            impl ::rdfreak::Constructible for Person {
+                fn insert_patterns(
+                    construct_query_patterns: &mut ::rdfreak::ConstructQueryPatterns,
                     variable_generator: &mut ::rdfreak::SparqlVariableGenerator,
                     subject_variable: &str,
                 ) {
-                    <String as ::rdfreak::ConstructibleRdfProperty>::build_patterns(construct_query_patterns, variable_generator, subject_variable, &::oxrdf::NamedNode::new_unchecked("http://example.org/name"));
-                    <u32 as ::rdfreak::ConstructibleRdfProperty>::build_patterns(construct_query_patterns, variable_generator, subject_variable, &::oxrdf::NamedNode::new_unchecked("http://example.org/age"));
+                    let rdf_type_triple_pattern = ::rdfreak::TriplePattern::new(
+                        ::rdfreak::TriplePatternNode::Variable(subject_variable.to_owned()),
+                        ::rdfreak::TriplePatternNode::NamedNode(::oxrdf::NamedNode::new_unchecked("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")),
+                        ::rdfreak::TriplePatternNode::NamedNode(<Self as ::rdfreak::Entity>::get_rdf_type()),
+                    );
+
+                    construct_query_patterns
+                        .push_identical_triple_pattern(rdf_type_triple_pattern);
+
+                    <String as ::rdfreak::ConstructibleField>::insert_patterns(construct_query_patterns, variable_generator, subject_variable, &::oxrdf::NamedNode::new_unchecked("http://example.org/name"));
+                    <u32 as ::rdfreak::ConstructibleField>::insert_patterns(construct_query_patterns, variable_generator, subject_variable, &::oxrdf::NamedNode::new_unchecked("http://example.org/age"));
                 }
             }
 
-            impl ::rdfreak::ConstructibleRdfProperty for Person {
-                fn build_patterns(
-                    construct_query_patterns: &mut ::rdfreak::SparqlConstructQueryPatterns,
+            impl ::rdfreak::ConstructibleField for Person {
+                fn insert_patterns(
+                    construct_query_patterns: &mut ::rdfreak::ConstructQueryPatterns,
                     variable_generator: &mut ::rdfreak::SparqlVariableGenerator,
                     subject_variable: &str,
                     predicate: &::oxrdf::NamedNode,
                 ) {
                     let object_variable = variable_generator.next().unwrap();
 
-                    let triple_pattern = format!(
-                        "\t{} {} {} .\n",
-                        subject_variable, predicate, object_variable
+                    let triple_pattern = ::rdfreak::TriplePattern::new(
+                        ::rdfreak::TriplePatternNode::Variable(subject_variable.to_owned()),
+                        ::rdfreak::TriplePatternNode::NamedNode(predicate.clone()),
+                        ::rdfreak::TriplePatternNode::Variable(object_variable.clone()),
                     );
 
-                    construct_query_patterns.patterns.push_str(&triple_pattern);
-
                     construct_query_patterns
-                        .where_patterns
-                        .push_str(&triple_pattern);
+                        .push_identical_triple_pattern(triple_pattern);
 
-                    <Self as ::rdfreak::ConstructibleEntity>::build_patterns(construct_query_patterns, variable_generator, &object_variable);
+                    <Self as ::rdfreak::Constructible>::insert_patterns(construct_query_patterns, variable_generator, &object_variable);
                 }
             }
         };

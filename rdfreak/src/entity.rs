@@ -1,9 +1,6 @@
 use oxrdf::{Graph, NamedNode, NamedOrBlankNode, Triple};
 
-use crate::{
-    DeserializeRdfPropertyError, RdfProperty, RdfType, SparqlConstructQueryPatterns,
-    SparqlVariableGenerator,
-};
+use crate::{DeserializeRdfPropertyError, RdfProperty, RdfType};
 
 #[derive(Debug, thiserror::Error)]
 pub enum DeserializeEntityError {
@@ -105,39 +102,4 @@ pub trait Entity: Sized {
 
     /// Returns the subject of the entity.
     fn get_subject(&self) -> &NamedOrBlankNode;
-}
-
-pub trait ConstructibleEntity: Entity {
-    fn build_property_patterns(
-        construct_query_patterns: &mut SparqlConstructQueryPatterns,
-        variable_generator: &mut SparqlVariableGenerator,
-        subject_variable: &str,
-    );
-
-    fn build_patterns(
-        construct_query_patterns: &mut SparqlConstructQueryPatterns,
-        variable_generator: &mut SparqlVariableGenerator,
-        subject_variable: &str,
-    ) {
-        let rdf_type_triple_pattern = format!(
-            "\t{} {} {} .\n",
-            subject_variable,
-            NamedNode::new_unchecked("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
-            Self::get_rdf_type()
-        );
-
-        construct_query_patterns
-            .patterns
-            .push_str(&rdf_type_triple_pattern);
-
-        construct_query_patterns
-            .where_patterns
-            .push_str(&rdf_type_triple_pattern);
-
-        Self::build_property_patterns(
-            construct_query_patterns,
-            variable_generator,
-            subject_variable,
-        );
-    }
 }

@@ -3,8 +3,8 @@ use std::{error::Error, sync::Arc};
 use oxrdf::{Graph, NamedOrBlankNode};
 use oxttl::TurtleSerializer;
 use rdfreak::{
-    ConstructibleEntity, DeserializeEntityError, Entity, SparqlConstructQueryPatterns,
-    SparqlVariableGenerator,
+    ConstructQueryPatterns, Constructible, DeserializeEntityError, Entity, SparqlVariableGenerator,
+    TriplePattern,
 };
 
 use crate::GraphDatabase;
@@ -22,33 +22,41 @@ pub enum QueryError {
     FailedToDeserializeEntity(DeserializeEntityError),
 }
 
+fn format_triple_patterns(triples: &[TriplePattern]) -> String {
+    triples
+        .iter()
+        .map(|triple_pattern| format!("{}", triple_pattern,))
+        .collect::<Vec<String>>()
+        .join(" ")
+}
+
 impl QueryClient {
     pub fn new(graph_db: Arc<dyn GraphDatabase>) -> Self {
         Self { graph_db }
     }
 
     /// Queries the graph for a single entity of type T with the given subject.
-    pub async fn query_single<E: Entity + ConstructibleEntity>(
+    pub async fn query_single<E: Entity + Constructible>(
         &self,
         entity_subject: &NamedOrBlankNode,
     ) -> Result<Option<E>, QueryError> {
-        let mut construct_query_patterns = SparqlConstructQueryPatterns::new();
+        let mut construct_query_patterns = ConstructQueryPatterns::new();
         let mut variable_generator = SparqlVariableGenerator::new();
 
         let subject_variable = variable_generator.next().unwrap();
 
-        E::build_patterns(
+        E::insert_patterns(
             &mut construct_query_patterns,
             &mut variable_generator,
             &subject_variable,
         );
 
         let query = format!(
-            "CONSTRUCT {{ {patterns} }} WHERE {{ VALUES {subject_var} {{ {subject_value} }} {where_patterns} }}",
+            "CONSTRUCT {{ {template_patterns} }} WHERE {{ VALUES ?{subject_var} {{ {subject_value} }} {where_patterns} }}",
             subject_var = subject_variable,
             subject_value = entity_subject,
-            patterns = construct_query_patterns.patterns,
-            where_patterns = construct_query_patterns.where_patterns,
+            template_patterns = format_triple_patterns(&construct_query_patterns.template_patterns),
+            where_patterns = construct_query_patterns.where_pattern
         );
 
         let result_graph = self
@@ -67,22 +75,22 @@ impl QueryClient {
     }
 
     /// Queries the graph for all entities of type T.
-    pub async fn query_all<E: Entity + ConstructibleEntity>(&self) -> Result<Vec<E>, QueryError> {
-        let mut construct_query_patterns = SparqlConstructQueryPatterns::new();
+    pub async fn query_all<E: Entity + Constructible>(&self) -> Result<Vec<E>, QueryError> {
+        let mut construct_query_patterns = ConstructQueryPatterns::new();
         let mut variable_generator = SparqlVariableGenerator::new();
 
         let subject_variable = variable_generator.next().unwrap();
 
-        E::build_patterns(
+        E::insert_patterns(
             &mut construct_query_patterns,
             &mut variable_generator,
             &subject_variable,
         );
 
         let query = format!(
-            "CONSTRUCT {{ {patterns} }} WHERE {{ {where_patterns} }}",
-            patterns = construct_query_patterns.patterns,
-            where_patterns = construct_query_patterns.where_patterns,
+            "CONSTRUCT {{ {template_patterns} }} WHERE {{ {where_patterns} }}",
+            template_patterns = format_triple_patterns(&construct_query_patterns.template_patterns),
+            where_patterns = construct_query_patterns.where_pattern,
         );
 
         let result_graph = self
@@ -98,10 +106,7 @@ impl QueryClient {
     }
 
     /// Inserts the given entity into the graph.
-    pub async fn insert<E: Entity + ConstructibleEntity>(
-        &self,
-        entity: &E,
-    ) -> Result<(), QueryError> {
+    pub async fn insert<E: Entity + Constructible>(&self, entity: &E) -> Result<(), QueryError> {
         let mut entity_graph = Graph::new();
 
         entity.serialize(&mut entity_graph);
@@ -127,20 +132,17 @@ impl QueryClient {
     /// Saves the given entity to the graph.
     ///
     /// This is basically both an insert and a delete (upsert).
-    pub async fn save<E: Entity + ConstructibleEntity>(
-        &self,
-        entity: &E,
-    ) -> Result<(), QueryError> {
+    pub async fn save<E: Entity + Constructible>(&self, entity: &E) -> Result<(), QueryError> {
         // this is basically both an insert and a delete.
 
         // 1) build the query patterns
 
-        let mut construct_query_patterns = SparqlConstructQueryPatterns::new();
+        let mut construct_query_patterns = ConstructQueryPatterns::new();
         let mut variable_generator = SparqlVariableGenerator::new();
 
         let subject_variable = variable_generator.next().unwrap();
 
-        E::build_patterns(
+        E::insert_patterns(
             &mut construct_query_patterns,
             &mut variable_generator,
             &subject_variable,
@@ -163,11 +165,11 @@ impl QueryClient {
         // 3) build the query
 
         let query = format!(
-            "DELETE {{ {patterns} }} INSERT {{ {entity_ttl} }} WHERE {{ VALUES {subject_var} {{ {subject_value} }} {where_patterns} }}",
+            "DELETE {{ {template_patterns} }} INSERT {{ {entity_ttl} }} WHERE {{ VALUES ?{subject_var} {{ {subject_value} }} {where_patterns} }}",
             subject_var = subject_variable,
             subject_value = entity.get_subject(),
-            patterns = construct_query_patterns.patterns,
-            where_patterns = construct_query_patterns.where_patterns,
+            template_patterns = format_triple_patterns(&construct_query_patterns.template_patterns),
+            where_patterns = construct_query_patterns.where_pattern,
             entity_ttl = entity_ttl,
         );
 
@@ -182,27 +184,27 @@ impl QueryClient {
     }
 
     /// Deletes the entity with the given subject from the graph.
-    pub async fn delete<E: Entity + ConstructibleEntity>(
+    pub async fn delete<E: Entity + Constructible>(
         &self,
         entity_subject: &NamedOrBlankNode,
     ) -> Result<(), QueryError> {
-        let mut construct_query_patterns = SparqlConstructQueryPatterns::new();
+        let mut construct_query_patterns = ConstructQueryPatterns::new();
         let mut variable_generator = SparqlVariableGenerator::new();
 
         let subject_variable = variable_generator.next().unwrap();
 
-        E::build_patterns(
+        E::insert_patterns(
             &mut construct_query_patterns,
             &mut variable_generator,
             &subject_variable,
         );
 
         let query = format!(
-            "DELETE {{ {patterns} }} WHERE {{ VALUES {subject_var} {{ {subject_value} }} {where_patterns} }}",
+            "DELETE {{ {template_patterns} }} WHERE {{ VALUES ?{subject_var} {{ {subject_value} }} {where_patterns} }}",
             subject_var = subject_variable,
             subject_value = entity_subject,
-            patterns = construct_query_patterns.patterns,
-            where_patterns = construct_query_patterns.where_patterns,
+            template_patterns = format_triple_patterns(&construct_query_patterns.template_patterns),
+            where_patterns = construct_query_patterns.where_pattern,
         );
 
         self.graph_db

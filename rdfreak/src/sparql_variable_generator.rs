@@ -30,8 +30,7 @@ impl Iterator for SparqlVariableGenerator {
     fn next(&mut self) -> Option<Self::Item> {
         self.current += 1;
 
-        let next_base_26 = encode_base_26(self.current);
-        let variable_name = format!("?{}", next_base_26);
+        let variable_name = encode_base_26(self.current);
 
         Some(variable_name)
     }
@@ -45,24 +44,24 @@ mod tests {
     fn test_variable_generator() {
         let mut generator = SparqlVariableGenerator::new();
 
-        assert_eq!(generator.next(), Some("?a".to_string()));
-        assert_eq!(generator.next(), Some("?b".to_string()));
-        assert_eq!(generator.next(), Some("?c".to_string()));
+        assert_eq!(generator.next(), Some("a".to_string()));
+        assert_eq!(generator.next(), Some("b".to_string()));
+        assert_eq!(generator.next(), Some("c".to_string()));
 
         // jump to ?z
-        assert_eq!(generator.nth(22), Some("?z".to_string()));
+        assert_eq!(generator.nth(22), Some("z".to_string()));
 
         // continue
-        assert_eq!(generator.next(), Some("?aa".to_string()));
-        assert_eq!(generator.next(), Some("?ab".to_string()));
-        assert_eq!(generator.next(), Some("?ac".to_string()));
+        assert_eq!(generator.next(), Some("aa".to_string()));
+        assert_eq!(generator.next(), Some("ab".to_string()));
+        assert_eq!(generator.next(), Some("ac".to_string()));
 
         // jump to ?az
-        assert_eq!(generator.nth(22), Some("?az".to_string()));
+        assert_eq!(generator.nth(22), Some("az".to_string()));
 
         // continue
-        assert_eq!(generator.next(), Some("?ba".to_string()));
-        assert_eq!(generator.next(), Some("?bb".to_string()));
-        assert_eq!(generator.next(), Some("?bc".to_string()));
+        assert_eq!(generator.next(), Some("ba".to_string()));
+        assert_eq!(generator.next(), Some("bb".to_string()));
+        assert_eq!(generator.next(), Some("bc".to_string()));
     }
 }

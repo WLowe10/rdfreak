@@ -1,9 +1,3 @@
-pub mod sparql_variable_generator;
-pub use sparql_variable_generator::*;
-
-pub mod sqarql_construct_query_patterns;
-pub use sqarql_construct_query_patterns::*;
-
 pub mod literal;
 pub use literal::*;
 
@@ -15,6 +9,18 @@ pub use property::*;
 
 pub mod entity;
 pub use entity::*;
+
+pub mod sparql_variable_generator;
+pub use sparql_variable_generator::*;
+
+pub mod construct_query;
+pub use construct_query::*;
+
+pub mod constructible;
+pub use constructible::*;
+
+pub mod constructible_field;
+pub use constructible_field::*;
 
 // types
 pub mod rdf_type;
