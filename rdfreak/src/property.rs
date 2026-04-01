@@ -1,6 +1,17 @@
 use oxrdf::{BlankNode, Graph, Literal, NamedNode, NamedOrBlankNode, Term, Triple};
 
-use crate::{DeserializeRdfObjectError, RdfObject};
+use crate::{DeserializeRdfObjectError, FromRdfObject, ToRdfObject};
+
+/// A trait for serializing a property value into an RDF graph, given a subject and predicate.
+pub trait SerializeRdfProperty: Sized {
+    /// Serializes the property value into the given graph, using the provided subject and predicate.
+    fn serialize_property(
+        &self,
+        graph: &mut Graph,
+        subject: &NamedOrBlankNode,
+        predicate: &NamedNode,
+    );
+}
 
 #[derive(Debug, thiserror::Error)]
 pub enum DeserializeRdfPropertyError {
@@ -13,16 +24,8 @@ pub enum DeserializeRdfPropertyError {
 
 pub type DeserializeRdfPropertyResult<T> = Result<T, DeserializeRdfPropertyError>;
 
-/// Represents a predicate-bound relation from an entity's subject to zero or more RDF object terms.
-pub trait RdfProperty: Sized {
-    /// Serializes the property value into the given graph, using the provided subject and predicate.
-    fn serialize_property(
-        &self,
-        graph: &mut Graph,
-        subject: &NamedOrBlankNode,
-        predicate: &NamedNode,
-    );
-
+/// A trait for deserializing a property value from an RDF graph, given a subject and predicate.
+pub trait DeserializeRdfProperty: Sized {
     /// Deserializes the property value from the given graph, using the provided subject and predicate.
     fn deserialize_property(
         graph: &Graph,
@@ -33,7 +36,7 @@ pub trait RdfProperty: Sized {
 
 // note: lot of repetition here. consider using a macro to generate some of these
 
-impl RdfProperty for BlankNode {
+impl SerializeRdfProperty for BlankNode {
     fn serialize_property(
         &self,
         graph: &mut Graph,
@@ -48,7 +51,9 @@ impl RdfProperty for BlankNode {
             object_term,
         ));
     }
+}
 
+impl DeserializeRdfProperty for BlankNode {
     fn deserialize_property(
         graph: &Graph,
         subject: &NamedOrBlankNode,
@@ -68,7 +73,7 @@ impl RdfProperty for BlankNode {
     }
 }
 
-impl RdfProperty for NamedNode {
+impl SerializeRdfProperty for NamedNode {
     fn serialize_property(
         &self,
         graph: &mut Graph,
@@ -83,7 +88,9 @@ impl RdfProperty for NamedNode {
             object_term,
         ));
     }
+}
 
+impl DeserializeRdfProperty for NamedNode {
     fn deserialize_property(
         graph: &Graph,
         subject: &NamedOrBlankNode,
@@ -103,7 +110,7 @@ impl RdfProperty for NamedNode {
     }
 }
 
-impl RdfProperty for NamedOrBlankNode {
+impl SerializeRdfProperty for NamedOrBlankNode {
     fn serialize_property(
         &self,
         graph: &mut Graph,
@@ -118,7 +125,9 @@ impl RdfProperty for NamedOrBlankNode {
             object_term,
         ));
     }
+}
 
+impl DeserializeRdfProperty for NamedOrBlankNode {
     fn deserialize_property(
         graph: &Graph,
         subject: &NamedOrBlankNode,
@@ -138,7 +147,7 @@ impl RdfProperty for NamedOrBlankNode {
     }
 }
 
-impl RdfProperty for Literal {
+impl SerializeRdfProperty for Literal {
     fn serialize_property(
         &self,
         graph: &mut Graph,
@@ -153,7 +162,9 @@ impl RdfProperty for Literal {
             object_term,
         ));
     }
+}
 
+impl DeserializeRdfProperty for Literal {
     fn deserialize_property(
         graph: &Graph,
         subject: &NamedOrBlankNode,
@@ -173,7 +184,7 @@ impl RdfProperty for Literal {
     }
 }
 
-impl RdfProperty for Term {
+impl SerializeRdfProperty for Term {
     fn serialize_property(
         &self,
         graph: &mut Graph,
@@ -188,7 +199,9 @@ impl RdfProperty for Term {
             object_term,
         ));
     }
+}
 
+impl DeserializeRdfProperty for Term {
     fn deserialize_property(
         graph: &Graph,
         subject: &NamedOrBlankNode,
@@ -206,7 +219,7 @@ impl RdfProperty for Term {
     }
 }
 
-impl RdfProperty for String {
+impl SerializeRdfProperty for String {
     fn serialize_property(
         &self,
         graph: &mut Graph,
@@ -221,7 +234,9 @@ impl RdfProperty for String {
             object_term,
         ));
     }
+}
 
+impl DeserializeRdfProperty for String {
     fn deserialize_property(
         graph: &Graph,
         subject: &NamedOrBlankNode,
@@ -241,7 +256,7 @@ impl RdfProperty for String {
     }
 }
 
-impl<T: RdfProperty + RdfObject> RdfProperty for Option<T> {
+impl<T: SerializeRdfProperty> SerializeRdfProperty for Option<T> {
     fn serialize_property(
         &self,
         graph: &mut Graph,
@@ -252,7 +267,9 @@ impl<T: RdfProperty + RdfObject> RdfProperty for Option<T> {
             value.serialize_property(graph, subject, predicate);
         }
     }
+}
 
+impl<T: FromRdfObject> DeserializeRdfProperty for Option<T> {
     fn deserialize_property(
         graph: &Graph,
         subject: &NamedOrBlankNode,
@@ -270,7 +287,7 @@ impl<T: RdfProperty + RdfObject> RdfProperty for Option<T> {
     }
 }
 
-impl<T: RdfProperty + RdfObject> RdfProperty for Vec<T> {
+impl<T: SerializeRdfProperty> SerializeRdfProperty for Vec<T> {
     fn serialize_property(
         &self,
         graph: &mut Graph,
@@ -281,7 +298,9 @@ impl<T: RdfProperty + RdfObject> RdfProperty for Vec<T> {
             item.serialize_property(graph, subject, predicate);
         }
     }
+}
 
+impl<T: FromRdfObject> DeserializeRdfProperty for Vec<T> {
     fn deserialize_property(
         graph: &Graph,
         subject: &NamedOrBlankNode,

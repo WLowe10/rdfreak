@@ -6,6 +6,24 @@ pub fn get_rdf_attribute(attributes: &[syn::Attribute]) -> Option<&syn::Attribut
 }
 
 #[derive(Debug, FromMeta)]
+pub struct EntityStructRdfAttributes {
+    #[darling(rename = "type")]
+    pub rdf_type: String,
+}
+
+/// parses the expected RDF attributes from an entity struct-level attribute
+pub fn parse_struct_rdf_attributes(
+    input: &syn::DeriveInput,
+) -> syn::Result<EntityStructRdfAttributes> {
+    let attr = get_rdf_attribute(&input.attrs).ok_or_else(|| {
+        syn::Error::new_spanned(input, "Missing required attribute: #[rdf(type = \"...\")]")
+    })?;
+
+    EntityStructRdfAttributes::from_meta(&attr.meta)
+        .map_err(|err| syn::Error::new_spanned(attr, err))
+}
+
+#[derive(Debug, FromMeta)]
 pub struct StructFieldRdfAttributes {
     #[darling(default, rename = "subject")]
     pub is_subject: bool,
@@ -26,4 +44,169 @@ pub fn parse_struct_field_rdf_attributes(
 
     StructFieldRdfAttributes::from_meta(&attr.meta)
         .map_err(|err| syn::Error::new_spanned(attr, err))
+}
+
+pub fn validate_struct_field_rdf_attributes(
+    field: &syn::Field,
+    attributes: &StructFieldRdfAttributes,
+) -> syn::Result<()> {
+    if attributes.is_subject && attributes.predicate.is_some() {
+        return Err(syn::Error::new_spanned(
+            field,
+            "A field cannot have both #[rdf(subject)] and #[rdf(predicate = \"...\")] attributes",
+        ));
+    }
+
+    Ok(())
+}
+
+pub fn validate_all_struct_field_rdf_attributes(
+    struct_input: &syn::DeriveInput,
+    struct_definition: &syn::DataStruct,
+    field_atttributes: &[StructFieldRdfAttributes],
+) -> syn::Result<()> {
+    let mut encountered_subject_field = false;
+
+    // validate the fields for each attribute
+    for (field, attributes) in struct_definition.fields.iter().zip(field_atttributes) {
+        validate_struct_field_rdf_attributes(field, attributes)?;
+
+        if attributes.is_subject {
+            if encountered_subject_field {
+                return Err(syn::Error::new_spanned(
+                    field,
+                    "Only one field can have the #[rdf(subject)] attribute",
+                ));
+            }
+
+            encountered_subject_field = true;
+        }
+    }
+
+    if !encountered_subject_field {
+        return Err(syn::Error::new_spanned(
+            struct_input,
+            "Missing required attribute: #[rdf(subject)] on a field",
+        ));
+    }
+
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use syn::parse_quote;
+
+    #[test]
+    fn test_validate_all_struct_field_rdf_attributes_fails_with_no_subject() {
+        let test_struct: syn::DeriveInput = parse_quote! {
+            #[rdf(type = "http://example.com/Person")]
+            struct Person {
+                #[rdf(predicate = "http://example.com/predicate")]
+                pub id: String
+            }
+        };
+
+        let syn::Data::Struct(struct_data) = &test_struct.data else {
+            panic!("Test struct should be a struct");
+        };
+
+        let field_rdf_attributes = struct_data
+            .fields
+            .iter()
+            .map(parse_struct_field_rdf_attributes)
+            .collect::<Result<Vec<_>, syn::Error>>()
+            .unwrap();
+
+        let syn_result = validate_all_struct_field_rdf_attributes(
+            &test_struct,
+            struct_data,
+            &field_rdf_attributes,
+        );
+
+        let syn_err = syn_result.err().unwrap();
+
+        pretty_assertions::assert_eq!(
+            syn_err.to_string(),
+            "Missing required attribute: #[rdf(subject)] on a field"
+        )
+    }
+
+    #[test]
+    fn test_validate_all_struct_field_rdf_attributes_fails_with_multiple_subjects() {
+        let test_struct: syn::DeriveInput = parse_quote! {
+            #[rdf(type = "http://example.com/Person")]
+            struct Person {
+                #[rdf(subject)]
+                pub subject1: ::oxrdf::NamedOrBlankNode,
+
+                #[rdf(subject)]
+                pub subject2: ::oxrdf::NamedOrBlankNode,
+
+                #[rdf(predicate = "http://example.com/predicate")]
+                pub id: String
+            }
+        };
+
+        let syn::Data::Struct(struct_data) = &test_struct.data else {
+            panic!("Test struct should be a struct");
+        };
+
+        let field_rdf_attributes = struct_data
+            .fields
+            .iter()
+            .map(parse_struct_field_rdf_attributes)
+            .collect::<Result<Vec<_>, syn::Error>>()
+            .unwrap();
+
+        let syn_result = validate_all_struct_field_rdf_attributes(
+            &test_struct,
+            struct_data,
+            &field_rdf_attributes,
+        );
+
+        let syn_err = syn_result.err().unwrap();
+
+        pretty_assertions::assert_eq!(
+            syn_err.to_string(),
+            "Only one field can have the #[rdf(subject)] attribute"
+        );
+    }
+
+    #[test]
+    fn test_validate_all_struct_field_rdf_attributes_fails_with_invalid_field_attributes() {
+        let test_struct: syn::DeriveInput = parse_quote! {
+            #[rdf(type = "http://example.com/Person")]
+            struct Person {
+                #[rdf(subject, predicate = "http://example.com/predicate")]
+                pub id: String
+            }
+        };
+
+        let syn::Data::Struct(struct_data) = &test_struct.data else {
+            panic!("Test struct should be a struct");
+        };
+
+        let field_rdf_attributes = struct_data
+            .fields
+            .iter()
+            .map(parse_struct_field_rdf_attributes)
+            .collect::<Result<Vec<_>, syn::Error>>()
+            .unwrap();
+
+        let syn_result = validate_all_struct_field_rdf_attributes(
+            &test_struct,
+            struct_data,
+            &field_rdf_attributes,
+        );
+
+        let syn_err = syn_result.err().unwrap();
+
+        pretty_assertions::assert_eq!(
+            syn_err.to_string(),
+            "A field cannot have both #[rdf(subject)] and #[rdf(predicate = \"...\")] attributes"
+        );
+    }
 }

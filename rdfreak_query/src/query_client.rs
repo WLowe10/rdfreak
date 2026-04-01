@@ -3,8 +3,8 @@ use std::{error::Error, sync::Arc};
 use oxrdf::{Graph, NamedOrBlankNode};
 use oxttl::TurtleSerializer;
 use rdfreak::{
-    ConstructQueryPatterns, Constructible, DeserializeEntityError, Entity, SparqlVariableGenerator,
-    TriplePattern,
+    ConstructQueryPatterns, Constructible, DeserializeResourceError, Entity, FromRdf,
+    SparqlVariableGenerator, ToRdf, TriplePattern,
 };
 
 use crate::GraphDatabase;
@@ -18,8 +18,8 @@ pub enum QueryError {
     #[error("Failed to query graph: {0}")]
     FailedToQueryGraph(Box<dyn Error>),
 
-    #[error("Failed to deserialize entity: {0}")]
-    FailedToDeserializeEntity(DeserializeEntityError),
+    #[error("Failed to deserialize resource: {0}")]
+    FailedToDeserializeResource(DeserializeResourceError),
 }
 
 fn format_triple_patterns(triples: &[TriplePattern]) -> String {
@@ -36,7 +36,7 @@ impl QueryClient {
     }
 
     /// Queries the graph for a single entity of type T with the given subject.
-    pub async fn query_single<E: Entity + Constructible>(
+    pub async fn query_single<E: Entity + FromRdf + Constructible>(
         &self,
         entity_subject: &NamedOrBlankNode,
     ) -> Result<Option<E>, QueryError> {
@@ -65,12 +65,12 @@ impl QueryClient {
             .await
             .map_err(QueryError::FailedToQueryGraph)?;
 
-        let entity_result = E::deserialize(&result_graph, entity_subject);
+        let entity_result = E::from_rdf(&result_graph, entity_subject);
 
         match entity_result {
             Ok(entity) => Ok(Some(entity)),
-            Err(DeserializeEntityError::InvalidRdfType { .. }) => Ok(None),
-            Err(err) => Err(QueryError::FailedToDeserializeEntity(err)),
+            Err(DeserializeResourceError::InvalidRdfType { .. }) => Ok(None),
+            Err(err) => Err(QueryError::FailedToDeserializeResource(err)),
         }
     }
 
@@ -99,17 +99,22 @@ impl QueryClient {
             .await
             .map_err(QueryError::FailedToQueryGraph)?;
 
-        let entities =
-            E::deserialize_all(&result_graph).map_err(QueryError::FailedToDeserializeEntity)?;
+        // let entities =
+        //     E::deserialize_all(&result_graph).map_err(QueryError::FailedToDeserializeResource)?;
 
-        Ok(entities)
+        // Ok(entities)
+
+        todo!()
     }
 
     /// Inserts the given entity into the graph.
-    pub async fn insert<E: Entity + Constructible>(&self, entity: &E) -> Result<(), QueryError> {
+    pub async fn insert<E: Entity + ToRdf + Constructible>(
+        &self,
+        entity: &E,
+    ) -> Result<(), QueryError> {
         let mut entity_graph = Graph::new();
 
-        entity.serialize(&mut entity_graph);
+        entity.to_rdf(&mut entity_graph);
 
         let mut serializer = TurtleSerializer::new().for_writer(Vec::new());
 
@@ -132,7 +137,10 @@ impl QueryClient {
     /// Saves the given entity to the graph.
     ///
     /// This is basically both an insert and a delete (upsert).
-    pub async fn save<E: Entity + Constructible>(&self, entity: &E) -> Result<(), QueryError> {
+    pub async fn save<E: Entity + ToRdf + Constructible>(
+        &self,
+        entity: &E,
+    ) -> Result<(), QueryError> {
         // this is basically both an insert and a delete.
 
         // 1) build the query patterns
@@ -152,7 +160,7 @@ impl QueryClient {
 
         let mut entity_graph = Graph::new();
 
-        entity.serialize(&mut entity_graph);
+        entity.to_rdf(&mut entity_graph);
 
         let mut serializer = TurtleSerializer::new().for_writer(Vec::new());
 

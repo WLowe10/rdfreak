@@ -88,7 +88,7 @@ mod tests {
 
     #[test]
     fn test_works() {
-        let input_tokens: syn::DeriveInput = syn::parse2(quote! {
+        let input_tokens: syn::DeriveInput = syn::parse_quote! {
             struct Person {
                 #[rdf(subject)]
                 subject: oxrdf::NamedOrBlankNode,
@@ -99,8 +99,7 @@ mod tests {
                 #[rdf(predicate = "http://example.org/age")]
                 age: u32,
             }
-        })
-        .unwrap();
+        };
 
         let expected = quote! {
             impl ::rdfreak::Constructible for Person {

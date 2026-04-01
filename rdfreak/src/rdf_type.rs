@@ -1,8 +1,9 @@
 use oxrdf::{Graph, NamedNode, Term, Triple};
 
 use crate::{
-    DeserializeRdfObjectError, DeserializeRdfObjectResult, DeserializeRdfPropertyError,
-    DeserializeRdfPropertyResult, RdfObject, RdfProperty,
+    DeserializeRdfObjectError, DeserializeRdfObjectResult, DeserializeRdfProperty,
+    DeserializeRdfPropertyError, DeserializeRdfPropertyResult, FromRdfObject, SerializeRdfProperty,
+    ToRdfObject,
 };
 
 #[derive(Debug, Clone)]
@@ -20,11 +21,13 @@ impl RdfType {
     }
 }
 
-impl RdfObject for RdfType {
+impl ToRdfObject for RdfType {
     fn to_term(&self, _graph: &mut Graph) -> Term {
         Term::NamedNode(self.value.clone())
     }
+}
 
+impl FromRdfObject for RdfType {
     fn from_term(_graph: &Graph, term: &oxrdf::Term) -> DeserializeRdfObjectResult<Self> {
         let Term::NamedNode(named_node) = term else {
             return Err(DeserializeRdfObjectError::UnexpectedTermType(term.clone()));
@@ -34,7 +37,7 @@ impl RdfObject for RdfType {
     }
 }
 
-impl RdfProperty for RdfType {
+impl SerializeRdfProperty for RdfType {
     fn serialize_property(
         &self,
         graph: &mut Graph,
@@ -49,7 +52,9 @@ impl RdfProperty for RdfType {
             object_term,
         ));
     }
+}
 
+impl DeserializeRdfProperty for RdfType {
     fn deserialize_property(
         graph: &Graph,
         subject: &oxrdf::NamedOrBlankNode,

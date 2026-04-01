@@ -1,43 +1,47 @@
 use oxrdf::{Graph, NamedNode, NamedOrBlankNode, Term, Triple};
 
 use rdfreak::{
-    DeserializeRdfObjectResult, DeserializeRdfPropertyError, DeserializeRdfPropertyResult,
-    RdfObject, RdfProperty,
+    DeserializeRdfObjectResult, DeserializeRdfProperty, DeserializeRdfPropertyError,
+    DeserializeRdfPropertyResult, FromRdfObject, SerializeRdfProperty, ToRdfObject,
 };
 
 /// Represents a reference to an RDF object term that can be deserialized into a value of type T.
 #[derive(Debug, Clone)]
-pub struct ObjectRef<T: RdfObject> {
+pub struct ObjectRef<T> {
     object_term: Term,
     _marker: std::marker::PhantomData<T>,
 }
 
-impl<T: RdfObject> ObjectRef<T> {
+impl<T> ObjectRef<T> {
     pub fn new(object_term: Term) -> Self {
         Self {
             object_term,
             _marker: std::marker::PhantomData,
         }
     }
+}
 
+impl<T: FromRdfObject> ObjectRef<T> {
     pub fn deserialize(&self, graph: &Graph) -> DeserializeRdfObjectResult<T> {
         T::from_term(graph, &self.object_term)
     }
 }
 
-impl<T: RdfObject> RdfObject for ObjectRef<T> {
+impl<T: ToRdfObject> ToRdfObject for ObjectRef<T> {
     fn to_term(&self, _graph: &mut Graph) -> Term {
         // ObjectRef serializes to just a term. Could be a named node, blank node, or literal term.
         self.object_term.clone()
     }
+}
 
+impl<T: FromRdfObject> FromRdfObject for ObjectRef<T> {
     fn from_term(_graph: &Graph, term: &Term) -> DeserializeRdfObjectResult<Self> {
-        // object ref deserialization just wraps the term in an ObjectRef struct. The actual deserialization to type T happens when the deserialize method is called on the ObjectRef instance.
+        // when deserializing an ObjectRef, we just wrap the term in an ObjectRef struct. The actual deserialization to type T happens when the deserialize method is called on the ObjectRef instance.
         Ok(ObjectRef::new(term.clone()))
     }
 }
 
-impl<T: RdfObject> RdfProperty for ObjectRef<T> {
+impl<T> SerializeRdfProperty for ObjectRef<T> {
     fn serialize_property(
         &self,
         graph: &mut Graph,
@@ -50,7 +54,9 @@ impl<T: RdfObject> RdfProperty for ObjectRef<T> {
             self.object_term.clone(),
         ));
     }
+}
 
+impl<T> DeserializeRdfProperty for ObjectRef<T> {
     fn deserialize_property(
         graph: &Graph,
         subject: &NamedOrBlankNode,
