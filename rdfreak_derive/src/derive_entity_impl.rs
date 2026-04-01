@@ -19,18 +19,18 @@ pub fn derive_entity_impl(input: syn::DeriveInput) -> syn::Result<TokenStream> {
     let struct_rdf_attributes = parse_struct_rdf_attributes(&input)?;
     let struct_rdf_type = &struct_rdf_attributes.rdf_type;
 
-    let field_rdf_atttributes = struct_data
+    let field_rdf_attributes = struct_data
         .fields
         .iter()
         .map(parse_struct_field_rdf_attributes)
         .collect::<Result<Vec<_>, syn::Error>>()?;
 
-    validate_all_struct_field_rdf_attributes(&input, struct_data, &field_rdf_atttributes)?;
+    validate_all_struct_field_rdf_attributes(&input, struct_data, &field_rdf_attributes)?;
 
     let subject_field = struct_data
         .fields
         .iter()
-        .zip(&field_rdf_atttributes)
+        .zip(&field_rdf_attributes)
         .find(|(_, attr)| attr.is_subject)
         .unwrap()
         .0;

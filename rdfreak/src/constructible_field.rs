@@ -1,8 +1,6 @@
 use oxrdf::NamedNode;
 
-use crate::{
-    ConstructQueryPatterns, GraphPattern, SparqlVariableGenerator, TriplePattern, TriplePatternNode,
-};
+use crate::{ConstructQueryPatterns, SparqlVariableGenerator, TriplePattern, TriplePatternNode};
 
 /// A trait for fields that can be constructed from SPARQL patterns.
 pub trait ConstructibleField {

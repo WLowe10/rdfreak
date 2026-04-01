@@ -1,7 +1,10 @@
 use proc_macro2::TokenStream;
 use quote::quote;
 
-use crate::utils::{parse_struct_field_rdf_attributes, parse_struct_rdf_attributes};
+use crate::utils::{
+    parse_struct_field_rdf_attributes, parse_struct_rdf_attributes,
+    validate_all_struct_field_rdf_attributes,
+};
 
 pub fn derive_from_rdf_impl(input: syn::DeriveInput) -> syn::Result<TokenStream> {
     let syn::Data::Struct(struct_data) = &input.data else {
@@ -20,6 +23,8 @@ pub fn derive_from_rdf_impl(input: syn::DeriveInput) -> syn::Result<TokenStream>
         .iter()
         .map(parse_struct_field_rdf_attributes)
         .collect::<Result<Vec<_>, syn::Error>>()?;
+
+    validate_all_struct_field_rdf_attributes(&input, struct_data, &field_rdf_attributes)?;
 
     let subject_field = struct_data
         .fields

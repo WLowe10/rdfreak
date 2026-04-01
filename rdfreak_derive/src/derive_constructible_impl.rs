@@ -1,7 +1,10 @@
 use proc_macro2::TokenStream;
 use quote::quote;
 
-use crate::utils::parse_struct_field_rdf_attributes;
+use crate::utils::{
+    parse_struct_field_rdf_attributes, parse_struct_rdf_attributes,
+    validate_all_struct_field_rdf_attributes,
+};
 
 pub fn derive_constructible_impl(input: syn::DeriveInput) -> syn::Result<TokenStream> {
     let syn::Data::Struct(struct_data) = &input.data else {
@@ -13,18 +16,22 @@ pub fn derive_constructible_impl(input: syn::DeriveInput) -> syn::Result<TokenSt
 
     let struct_identifier = &input.ident;
 
-    let property_attributes = struct_data
+    parse_struct_rdf_attributes(&input)?;
+
+    let field_attributes = struct_data
         .fields
         .iter()
         .map(parse_struct_field_rdf_attributes)
         .collect::<Result<Vec<_>, syn::Error>>()?;
 
-    // generate code for building construct patterns for each property
+    validate_all_struct_field_rdf_attributes(&input, struct_data, &field_attributes)?;
 
-    let build_property_patterns_statements = struct_data
+    // generate code for building construct patterns for each field
+
+    let build_field_patterns_statements = struct_data
         .fields
         .iter()
-        .zip(&property_attributes)
+        .zip(&field_attributes)
         .filter(|(_, attr)| !attr.is_subject)
         .map(|(field, attr)| {
     		let field_type = &field.ty;
@@ -52,7 +59,7 @@ pub fn derive_constructible_impl(input: syn::DeriveInput) -> syn::Result<TokenSt
                 construct_query_patterns
                     .push_identical_triple_pattern(rdf_type_triple_pattern);
 
-                #(#build_property_patterns_statements)*
+                #(#build_field_patterns_statements)*
             }
         }
 
