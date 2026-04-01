@@ -10,8 +10,11 @@ pub use literal::*;
 pub mod object;
 pub use object::*;
 
-pub mod property;
-pub use property::*;
+pub mod serialize_rdf_property;
+pub use serialize_rdf_property::*;
+
+pub mod deserialize_rdf_property;
+pub use deserialize_rdf_property::*;
 
 pub mod resource;
 pub use resource::*;

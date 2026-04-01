@@ -1,17 +1,6 @@
-use oxrdf::{BlankNode, Graph, Literal, NamedNode, NamedOrBlankNode, Term, Triple};
+use oxrdf::{BlankNode, Graph, Literal, NamedNode, NamedOrBlankNode, Term};
 
-use crate::{DeserializeRdfObjectError, FromRdfObject, ToRdfObject};
-
-/// A trait for serializing a property value into an RDF graph, given a subject and predicate.
-pub trait SerializeRdfProperty: Sized {
-    /// Serializes the property value into the given graph, using the provided subject and predicate.
-    fn serialize_property(
-        &self,
-        graph: &mut Graph,
-        subject: &NamedOrBlankNode,
-        predicate: &NamedNode,
-    );
-}
+use crate::{DeserializeRdfObjectError, FromRdfObject};
 
 #[derive(Debug, thiserror::Error)]
 pub enum DeserializeRdfPropertyError {
@@ -34,25 +23,6 @@ pub trait DeserializeRdfProperty: Sized {
     ) -> DeserializeRdfPropertyResult<Self>;
 }
 
-// note: lot of repetition here. consider using a macro to generate some of these
-
-impl SerializeRdfProperty for BlankNode {
-    fn serialize_property(
-        &self,
-        graph: &mut Graph,
-        subject: &NamedOrBlankNode,
-        predicate: &NamedNode,
-    ) {
-        let object_term = self.to_term(graph);
-
-        graph.insert(&Triple::new(
-            subject.as_ref(),
-            predicate.as_ref(),
-            object_term,
-        ));
-    }
-}
-
 impl DeserializeRdfProperty for BlankNode {
     fn deserialize_property(
         graph: &Graph,
@@ -70,23 +40,6 @@ impl DeserializeRdfProperty for BlankNode {
         let object_value = Self::from_term(graph, &object_term.into())?;
 
         Ok(object_value)
-    }
-}
-
-impl SerializeRdfProperty for NamedNode {
-    fn serialize_property(
-        &self,
-        graph: &mut Graph,
-        subject: &NamedOrBlankNode,
-        predicate: &NamedNode,
-    ) {
-        let object_term = self.to_term(graph);
-
-        graph.insert(&Triple::new(
-            subject.as_ref(),
-            predicate.as_ref(),
-            object_term,
-        ));
     }
 }
 
@@ -110,23 +63,6 @@ impl DeserializeRdfProperty for NamedNode {
     }
 }
 
-impl SerializeRdfProperty for NamedOrBlankNode {
-    fn serialize_property(
-        &self,
-        graph: &mut Graph,
-        subject: &NamedOrBlankNode,
-        predicate: &NamedNode,
-    ) {
-        let object_term = self.to_term(graph);
-
-        graph.insert(&Triple::new(
-            subject.as_ref(),
-            predicate.as_ref(),
-            object_term,
-        ));
-    }
-}
-
 impl DeserializeRdfProperty for NamedOrBlankNode {
     fn deserialize_property(
         graph: &Graph,
@@ -144,23 +80,6 @@ impl DeserializeRdfProperty for NamedOrBlankNode {
         let object_value = Self::from_term(graph, &object_term.into())?;
 
         Ok(object_value)
-    }
-}
-
-impl SerializeRdfProperty for Literal {
-    fn serialize_property(
-        &self,
-        graph: &mut Graph,
-        subject: &NamedOrBlankNode,
-        predicate: &NamedNode,
-    ) {
-        let object_term = self.to_term(graph);
-
-        graph.insert(&Triple::new(
-            subject.as_ref(),
-            predicate.as_ref(),
-            object_term,
-        ));
     }
 }
 
@@ -184,23 +103,6 @@ impl DeserializeRdfProperty for Literal {
     }
 }
 
-impl SerializeRdfProperty for Term {
-    fn serialize_property(
-        &self,
-        graph: &mut Graph,
-        subject: &NamedOrBlankNode,
-        predicate: &NamedNode,
-    ) {
-        let object_term = self.to_term(graph);
-
-        graph.insert(&Triple::new(
-            subject.as_ref(),
-            predicate.as_ref(),
-            object_term,
-        ));
-    }
-}
-
 impl DeserializeRdfProperty for Term {
     fn deserialize_property(
         graph: &Graph,
@@ -216,23 +118,6 @@ impl DeserializeRdfProperty for Term {
         };
 
         Ok(object_term.into())
-    }
-}
-
-impl SerializeRdfProperty for String {
-    fn serialize_property(
-        &self,
-        graph: &mut Graph,
-        subject: &NamedOrBlankNode,
-        predicate: &NamedNode,
-    ) {
-        let object_term = self.to_term(graph);
-
-        graph.insert(&Triple::new(
-            subject.as_ref(),
-            predicate.as_ref(),
-            object_term,
-        ));
     }
 }
 
@@ -256,19 +141,6 @@ impl DeserializeRdfProperty for String {
     }
 }
 
-impl<T: SerializeRdfProperty> SerializeRdfProperty for Option<T> {
-    fn serialize_property(
-        &self,
-        graph: &mut Graph,
-        subject: &NamedOrBlankNode,
-        predicate: &NamedNode,
-    ) {
-        if let Some(value) = self {
-            value.serialize_property(graph, subject, predicate);
-        }
-    }
-}
-
 impl<T: FromRdfObject> DeserializeRdfProperty for Option<T> {
     fn deserialize_property(
         graph: &Graph,
@@ -284,19 +156,6 @@ impl<T: FromRdfObject> DeserializeRdfProperty for Option<T> {
         let object_value = T::from_term(graph, &object_term.into())?;
 
         Ok(Some(object_value))
-    }
-}
-
-impl<T: SerializeRdfProperty> SerializeRdfProperty for Vec<T> {
-    fn serialize_property(
-        &self,
-        graph: &mut Graph,
-        subject: &NamedOrBlankNode,
-        predicate: &NamedNode,
-    ) {
-        for item in self {
-            item.serialize_property(graph, subject, predicate);
-        }
     }
 }
 
