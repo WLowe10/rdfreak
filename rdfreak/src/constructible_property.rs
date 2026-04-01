@@ -2,9 +2,9 @@ use oxrdf::NamedNode;
 
 use crate::{ConstructQueryPatterns, SparqlVariableGenerator, TriplePattern, TriplePatternNode};
 
-/// A trait for fields that can be constructed from SPARQL patterns.
-pub trait ConstructibleField {
-    /// Builds the SPARQL patterns needed to construct this field.
+/// A trait for properties that can be constructed from SPARQL patterns.
+pub trait ConstructibleProperty {
+    /// Builds the SPARQL patterns needed to construct this property.
     fn insert_patterns(
         construct_query_patterns: &mut ConstructQueryPatterns,
         variable_generator: &mut SparqlVariableGenerator,
@@ -16,7 +16,7 @@ pub trait ConstructibleField {
 // implementations
 
 // note: this implementation will be basically the exact same for all literals
-impl ConstructibleField for String {
+impl ConstructibleProperty for String {
     fn insert_patterns(
         construct_query_patterns: &mut ConstructQueryPatterns,
         variable_generator: &mut SparqlVariableGenerator,
@@ -35,7 +35,7 @@ impl ConstructibleField for String {
     }
 }
 
-impl<T: ConstructibleField> ConstructibleField for Option<T> {
+impl<T: ConstructibleProperty> ConstructibleProperty for Option<T> {
     fn insert_patterns(
         construct_query_patterns: &mut ConstructQueryPatterns,
         variable_generator: &mut SparqlVariableGenerator,
@@ -61,7 +61,7 @@ impl<T: ConstructibleField> ConstructibleField for Option<T> {
     }
 }
 
-impl<T: ConstructibleField> ConstructibleField for Vec<T> {
+impl<T: ConstructibleProperty> ConstructibleProperty for Vec<T> {
     fn insert_patterns(
         construct_query_patterns: &mut ConstructQueryPatterns,
         variable_generator: &mut SparqlVariableGenerator,

@@ -38,7 +38,7 @@ pub fn derive_constructible_impl(input: syn::DeriveInput) -> syn::Result<TokenSt
             let predicate = attr.predicate.as_ref().unwrap();
 
             quote! {
-                <#field_type as ::rdfreak::ConstructibleField>::insert_patterns(construct_query_patterns, variable_generator, subject_variable, &::oxrdf::NamedNode::new_unchecked(#predicate));
+                <#field_type as ::rdfreak::ConstructibleProperty>::insert_patterns(construct_query_patterns, variable_generator, subject_variable, &::oxrdf::NamedNode::new_unchecked(#predicate));
             }
         })
         .collect::<Vec<_>>();
@@ -63,7 +63,7 @@ pub fn derive_constructible_impl(input: syn::DeriveInput) -> syn::Result<TokenSt
             }
         }
 
-        impl ::rdfreak::ConstructibleField for #struct_identifier {
+        impl ::rdfreak::ConstructibleProperty for #struct_identifier {
             fn insert_patterns(
                 construct_query_patterns: &mut ::rdfreak::ConstructQueryPatterns,
                 variable_generator: &mut ::rdfreak::SparqlVariableGenerator,
@@ -96,6 +96,7 @@ mod tests {
     #[test]
     fn test_works() {
         let input_tokens: syn::DeriveInput = syn::parse_quote! {
+            #[rdf(type = "http://example.org/Person")]
             struct Person {
                 #[rdf(subject)]
                 subject: oxrdf::NamedOrBlankNode,
@@ -124,12 +125,12 @@ mod tests {
                     construct_query_patterns
                         .push_identical_triple_pattern(rdf_type_triple_pattern);
 
-                    <String as ::rdfreak::ConstructibleField>::insert_patterns(construct_query_patterns, variable_generator, subject_variable, &::oxrdf::NamedNode::new_unchecked("http://example.org/name"));
-                    <u32 as ::rdfreak::ConstructibleField>::insert_patterns(construct_query_patterns, variable_generator, subject_variable, &::oxrdf::NamedNode::new_unchecked("http://example.org/age"));
+                    <String as ::rdfreak::ConstructibleProperty>::insert_patterns(construct_query_patterns, variable_generator, subject_variable, &::oxrdf::NamedNode::new_unchecked("http://example.org/name"));
+                    <u32 as ::rdfreak::ConstructibleProperty>::insert_patterns(construct_query_patterns, variable_generator, subject_variable, &::oxrdf::NamedNode::new_unchecked("http://example.org/age"));
                 }
             }
 
-            impl ::rdfreak::ConstructibleField for Person {
+            impl ::rdfreak::ConstructibleProperty for Person {
                 fn insert_patterns(
                     construct_query_patterns: &mut ::rdfreak::ConstructQueryPatterns,
                     variable_generator: &mut ::rdfreak::SparqlVariableGenerator,

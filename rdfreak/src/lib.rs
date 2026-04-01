@@ -25,8 +25,8 @@ pub use construct_query::*;
 pub mod constructible;
 pub use constructible::*;
 
-pub mod constructible_field;
-pub use constructible_field::*;
+pub mod constructible_property;
+pub use constructible_property::*;
 
 pub mod rdf_type;
 pub use rdf_type::*;
