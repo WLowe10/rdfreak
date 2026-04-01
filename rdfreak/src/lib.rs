@@ -28,6 +28,8 @@ pub use constructible::*;
 pub mod constructible_field;
 pub use constructible_field::*;
 
-// types
 pub mod rdf_type;
 pub use rdf_type::*;
+
+pub mod utils;
+pub use utils::*;

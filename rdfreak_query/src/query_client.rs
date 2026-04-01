@@ -3,8 +3,8 @@ use std::{error::Error, sync::Arc};
 use oxrdf::{Graph, NamedOrBlankNode};
 use oxttl::TurtleSerializer;
 use rdfreak::{
-    ConstructQueryPatterns, Constructible, DeserializeResourceError, FromRdf, Resource,
-    SparqlVariableGenerator, ToRdf, TriplePattern,
+    ConstructQueryPatterns, Constructible, DeserializeResourceError, DeserializeResourceResult,
+    FromRdf, Resource, SparqlVariableGenerator, ToRdf, TriplePattern, deserialize_all,
 };
 
 use crate::GraphDatabase;
@@ -35,17 +35,17 @@ impl QueryClient {
         Self { graph_db }
     }
 
-    /// Queries the graph for a single resource of type T with the given subject.
-    pub async fn query_single<T: Resource + FromRdf + Constructible>(
+    /// Queries the graph for a single resource of type R with the given subject.
+    pub async fn query_single<R: Resource + FromRdf + Constructible>(
         &self,
         resource_subject: &NamedOrBlankNode,
-    ) -> Result<Option<T>, QueryError> {
+    ) -> Result<Option<R>, QueryError> {
         let mut construct_query_patterns = ConstructQueryPatterns::new();
         let mut variable_generator = SparqlVariableGenerator::new();
 
         let subject_variable = variable_generator.next().unwrap();
 
-        T::insert_patterns(
+        R::insert_patterns(
             &mut construct_query_patterns,
             &mut variable_generator,
             &subject_variable,
@@ -65,7 +65,7 @@ impl QueryClient {
             .await
             .map_err(QueryError::FailedToQueryGraph)?;
 
-        let resource_result = T::from_rdf(&result_graph, resource_subject);
+        let resource_result = R::from_rdf(&result_graph, resource_subject);
 
         match resource_result {
             Ok(resource) => Ok(Some(resource)),
@@ -74,14 +74,16 @@ impl QueryClient {
         }
     }
 
-    /// Queries the graph for all resources of type T.
-    pub async fn query_all<T: Resource + Constructible>(&self) -> Result<Vec<T>, QueryError> {
+    /// Queries the graph for all resources of type R.
+    pub async fn query_all<R: Resource + FromRdf + Constructible>(
+        &self,
+    ) -> Result<Vec<R>, QueryError> {
         let mut construct_query_patterns = ConstructQueryPatterns::new();
         let mut variable_generator = SparqlVariableGenerator::new();
 
         let subject_variable = variable_generator.next().unwrap();
 
-        T::insert_patterns(
+        R::insert_patterns(
             &mut construct_query_patterns,
             &mut variable_generator,
             &subject_variable,
@@ -99,18 +101,17 @@ impl QueryClient {
             .await
             .map_err(QueryError::FailedToQueryGraph)?;
 
-        // let entities =
-        //     E::deserialize_all(&result_graph).map_err(QueryError::FailedToDeserializeResource)?;
+        let entities = rdfreak::deserialize_all::<R>(&result_graph)
+            .collect::<DeserializeResourceResult<_>>()
+            .map_err(QueryError::FailedToDeserializeResource)?;
 
-        // Ok(entities)
-
-        todo!()
+        Ok(entities)
     }
 
     /// Inserts the given resource into the graph.
-    pub async fn insert<T: Resource + ToRdf + Constructible>(
+    pub async fn insert<R: Resource + ToRdf + Constructible>(
         &self,
-        resource: &T,
+        resource: &R,
     ) -> Result<(), QueryError> {
         let mut resource_graph = Graph::new();
 
@@ -137,9 +138,9 @@ impl QueryClient {
     /// Saves the given resource to the graph.
     ///
     /// This is basically both an insert and a delete (upsert).
-    pub async fn save<T: Resource + ToRdf + Constructible>(
+    pub async fn save<R: Resource + ToRdf + Constructible>(
         &self,
-        resource: &T,
+        resource: &R,
     ) -> Result<(), QueryError> {
         // this is basically both an insert and a delete.
 
@@ -150,7 +151,7 @@ impl QueryClient {
 
         let subject_variable = variable_generator.next().unwrap();
 
-        T::insert_patterns(
+        R::insert_patterns(
             &mut construct_query_patterns,
             &mut variable_generator,
             &subject_variable,
@@ -192,7 +193,7 @@ impl QueryClient {
     }
 
     /// Deletes the resource with the given subject from the graph.
-    pub async fn delete<T: Resource + Constructible>(
+    pub async fn delete<R: Resource + Constructible>(
         &self,
         resource_subject: &NamedOrBlankNode,
     ) -> Result<(), QueryError> {
@@ -201,7 +202,7 @@ impl QueryClient {
 
         let subject_variable = variable_generator.next().unwrap();
 
-        T::insert_patterns(
+        R::insert_patterns(
             &mut construct_query_patterns,
             &mut variable_generator,
             &subject_variable,
