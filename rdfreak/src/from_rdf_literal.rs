@@ -1,5 +1,3 @@
-use std::num::ParseIntError;
-
 use oxrdf::Literal;
 
 #[derive(Debug, thiserror::Error)]
@@ -19,39 +17,40 @@ pub trait FromRdfLiteral: Sized {
     fn from_literal(literal: &Literal) -> FromRdfLiteralResult<Self>;
 }
 
-impl FromRdfLiteral for i32 {
-    fn from_literal(literal: &Literal) -> FromRdfLiteralResult<Self> {
-        if literal.datatype().as_str() != "http://www.w3.org/2001/XMLSchema#integer" {
-            return Err(RdfLiteralError::InvalidDatatype {
-                expected: "http://www.w3.org/2001/XMLSchema#integer".to_string(),
-                actual: literal.datatype().as_str().to_string(),
-            });
+macro_rules! impl_from_rdf_literal_for {
+    ($t:ty, $datatype:expr) => {
+        impl FromRdfLiteral for $t {
+            fn from_literal(literal: &Literal) -> FromRdfLiteralResult<Self> {
+                if literal.datatype().as_str() != $datatype {
+                    return Err(RdfLiteralError::InvalidDatatype {
+                        expected: $datatype.to_string(),
+                        actual: literal.datatype().as_str().to_string(),
+                    });
+                }
+
+                let parsed_value: $t = literal
+                    .value()
+                    .parse::<$t>()
+                    .map_err(|err| RdfLiteralError::Parse(err.to_string()))?;
+
+                Ok(parsed_value)
+            }
         }
-
-        // why is the err param required to be explicitly typed here?
-        let parsed_value: i32 = literal
-            .value()
-            .parse()
-            .map_err(|err: ParseIntError| RdfLiteralError::Parse(err.to_string()))?;
-
-        Ok(parsed_value)
-    }
+    };
 }
 
-impl FromRdfLiteral for String {
-    fn from_literal(literal: &Literal) -> FromRdfLiteralResult<Self> {
-        if literal.datatype().as_str() != "http://www.w3.org/2001/XMLSchema#string" {
-            return Err(RdfLiteralError::InvalidDatatype {
-                expected: "http://www.w3.org/2001/XMLSchema#string".to_string(),
-                actual: literal.datatype().as_str().to_string(),
-            });
-        }
+impl_from_rdf_literal_for!(bool, "http://www.w3.org/2001/XMLSchema#boolean");
 
-        // let parsed_value: String = literal
-        //     .value()
-        //     .parse()
-        //     .map_err(DeserializeLiteralError::FailedToParse)?;
+impl_from_rdf_literal_for!(i8, "http://www.w3.org/2001/XMLSchema#byte");
+impl_from_rdf_literal_for!(i32, "http://www.w3.org/2001/XMLSchema#integer");
+impl_from_rdf_literal_for!(i64, "http://www.w3.org/2001/XMLSchema#long");
 
-        Ok(literal.value().to_owned())
-    }
-}
+impl_from_rdf_literal_for!(u8, "http://www.w3.org/2001/XMLSchema#unsignedByte");
+impl_from_rdf_literal_for!(u32, "http://www.w3.org/2001/XMLSchema#unsignedInt");
+impl_from_rdf_literal_for!(u64, "http://www.w3.org/2001/XMLSchema#unsignedLong");
+
+// or, should we just use decimal for both of them?
+impl_from_rdf_literal_for!(f32, "http://www.w3.org/2001/XMLSchema#float");
+impl_from_rdf_literal_for!(f64, "http://www.w3.org/2001/XMLSchema#decimal");
+
+impl_from_rdf_literal_for!(String, "http://www.w3.org/2001/XMLSchema#string");

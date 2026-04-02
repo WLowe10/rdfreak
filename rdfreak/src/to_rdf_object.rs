@@ -42,14 +42,27 @@ impl ToRdfObject for Term {
     }
 }
 
-impl ToRdfObject for i32 {
-    fn to_term(&self, _graph: &mut Graph) -> Term {
-        Term::Literal(self.to_literal())
-    }
+macro_rules! impl_to_rdf_object_for_primitive {
+    ($t:ty) => {
+        impl ToRdfObject for $t {
+            fn to_term(&self, _graph: &mut Graph) -> Term {
+                Term::Literal(self.to_literal())
+            }
+        }
+    };
 }
 
-impl ToRdfObject for String {
-    fn to_term(&self, _graph: &mut Graph) -> Term {
-        Term::Literal(self.to_literal())
-    }
-}
+impl_to_rdf_object_for_primitive!(bool);
+
+impl_to_rdf_object_for_primitive!(i8);
+impl_to_rdf_object_for_primitive!(i32);
+impl_to_rdf_object_for_primitive!(i64);
+
+impl_to_rdf_object_for_primitive!(u8);
+impl_to_rdf_object_for_primitive!(u32);
+impl_to_rdf_object_for_primitive!(u64);
+
+impl_to_rdf_object_for_primitive!(f32);
+impl_to_rdf_object_for_primitive!(f64);
+
+impl_to_rdf_object_for_primitive!(String);

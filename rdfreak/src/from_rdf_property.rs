@@ -23,112 +23,6 @@ pub trait FromRdfProperty: Sized {
     ) -> DeserializeRdfPropertyResult<Self>;
 }
 
-impl FromRdfProperty for BlankNode {
-    fn from_property(
-        graph: &Graph,
-        subject: &NamedOrBlankNode,
-        predicate: &NamedNode,
-    ) -> DeserializeRdfPropertyResult<Self> {
-        let maybe_object_term = graph.object_for_subject_predicate(subject, predicate);
-
-        let Some(object_term) = maybe_object_term else {
-            return Err(RdfPropertyError::MissingObjectValue(predicate.clone()));
-        };
-
-        let object_value = Self::from_term(graph, &object_term.into())?;
-
-        Ok(object_value)
-    }
-}
-
-impl FromRdfProperty for NamedNode {
-    fn from_property(
-        graph: &Graph,
-        subject: &NamedOrBlankNode,
-        predicate: &NamedNode,
-    ) -> DeserializeRdfPropertyResult<Self> {
-        let maybe_object_term = graph.object_for_subject_predicate(subject, predicate);
-
-        let Some(object_term) = maybe_object_term else {
-            return Err(RdfPropertyError::MissingObjectValue(predicate.clone()));
-        };
-
-        let object_value = Self::from_term(graph, &object_term.into())?;
-
-        Ok(object_value)
-    }
-}
-
-impl FromRdfProperty for NamedOrBlankNode {
-    fn from_property(
-        graph: &Graph,
-        subject: &NamedOrBlankNode,
-        predicate: &NamedNode,
-    ) -> DeserializeRdfPropertyResult<Self> {
-        let maybe_object_term = graph.object_for_subject_predicate(subject, predicate);
-
-        let Some(object_term) = maybe_object_term else {
-            return Err(RdfPropertyError::MissingObjectValue(predicate.clone()));
-        };
-
-        let object_value = Self::from_term(graph, &object_term.into())?;
-
-        Ok(object_value)
-    }
-}
-
-impl FromRdfProperty for Literal {
-    fn from_property(
-        graph: &Graph,
-        subject: &NamedOrBlankNode,
-        predicate: &NamedNode,
-    ) -> DeserializeRdfPropertyResult<Self> {
-        let maybe_object_term = graph.object_for_subject_predicate(subject, predicate);
-
-        let Some(object_term) = maybe_object_term else {
-            return Err(RdfPropertyError::MissingObjectValue(predicate.clone()));
-        };
-
-        let object_value = Self::from_term(graph, &object_term.into())?;
-
-        Ok(object_value)
-    }
-}
-
-impl FromRdfProperty for Term {
-    fn from_property(
-        graph: &Graph,
-        subject: &NamedOrBlankNode,
-        predicate: &NamedNode,
-    ) -> DeserializeRdfPropertyResult<Self> {
-        let maybe_object_term = graph.object_for_subject_predicate(subject, predicate);
-
-        let Some(object_term) = maybe_object_term else {
-            return Err(RdfPropertyError::MissingObjectValue(predicate.clone()));
-        };
-
-        Ok(object_term.into())
-    }
-}
-
-impl FromRdfProperty for String {
-    fn from_property(
-        graph: &Graph,
-        subject: &NamedOrBlankNode,
-        predicate: &NamedNode,
-    ) -> DeserializeRdfPropertyResult<Self> {
-        let maybe_object_term = graph.object_for_subject_predicate(subject, predicate);
-
-        let Some(object_term) = maybe_object_term else {
-            return Err(RdfPropertyError::MissingObjectValue(predicate.clone()));
-        };
-
-        let object_value = Self::from_term(graph, &object_term.into())?;
-
-        Ok(object_value)
-    }
-}
-
 impl<T: FromRdfObject> FromRdfProperty for Option<T> {
     fn from_property(
         graph: &Graph,
@@ -166,3 +60,47 @@ impl<T: FromRdfObject> FromRdfProperty for Vec<T> {
         Ok(objects)
     }
 }
+
+// the name of this is because the types this macro will be used for implement FromRdfObject
+macro_rules! impl_from_rdf_property_for_object {
+    ($t:ty) => {
+        impl FromRdfProperty for $t {
+            fn from_property(
+                graph: &Graph,
+                subject: &NamedOrBlankNode,
+                predicate: &NamedNode,
+            ) -> DeserializeRdfPropertyResult<Self> {
+                let maybe_object_term = graph.object_for_subject_predicate(subject, predicate);
+
+                let Some(object_term) = maybe_object_term else {
+                    return Err(RdfPropertyError::MissingObjectValue(predicate.clone()));
+                };
+
+                let object_value = Self::from_term(graph, &object_term.into())?;
+
+                Ok(object_value)
+            }
+        }
+    };
+}
+
+impl_from_rdf_property_for_object!(BlankNode);
+impl_from_rdf_property_for_object!(NamedNode);
+impl_from_rdf_property_for_object!(NamedOrBlankNode);
+impl_from_rdf_property_for_object!(Literal);
+impl_from_rdf_property_for_object!(Term);
+
+impl_from_rdf_property_for_object!(bool);
+
+impl_from_rdf_property_for_object!(i8);
+impl_from_rdf_property_for_object!(i32);
+impl_from_rdf_property_for_object!(i64);
+
+impl_from_rdf_property_for_object!(u8);
+impl_from_rdf_property_for_object!(u32);
+impl_from_rdf_property_for_object!(u64);
+
+impl_from_rdf_property_for_object!(f32);
+impl_from_rdf_property_for_object!(f64);
+
+impl_from_rdf_property_for_object!(String);

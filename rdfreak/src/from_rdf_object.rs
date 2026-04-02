@@ -68,26 +68,33 @@ impl FromRdfObject for Term {
     }
 }
 
-impl FromRdfObject for i32 {
-    fn from_term(_graph: &Graph, term: &Term) -> FromRdfObjectResult<Self> {
-        let Term::Literal(literal) = term else {
-            return Err(RdfObjectError::UnexpectedTermType(term.clone()));
-        };
+macro_rules! impl_from_rdf_object_for_primitive {
+    ($t:ty) => {
+        impl FromRdfObject for $t {
+            fn from_term(_graph: &Graph, term: &Term) -> FromRdfObjectResult<Self> {
+                let Term::Literal(literal) = term else {
+                    return Err(RdfObjectError::UnexpectedTermType(term.clone()));
+                };
 
-        let value = Self::from_literal(literal)?;
+                let value = Self::from_literal(literal)?;
 
-        Ok(value)
-    }
+                Ok(value)
+            }
+        }
+    };
 }
 
-impl FromRdfObject for String {
-    fn from_term(_graph: &Graph, term: &Term) -> FromRdfObjectResult<Self> {
-        let Term::Literal(literal) = term else {
-            return Err(RdfObjectError::UnexpectedTermType(term.clone()));
-        };
+impl_from_rdf_object_for_primitive!(bool);
 
-        let value = Self::from_literal(literal)?;
+impl_from_rdf_object_for_primitive!(i8);
+impl_from_rdf_object_for_primitive!(i32);
+impl_from_rdf_object_for_primitive!(i64);
 
-        Ok(value)
-    }
-}
+impl_from_rdf_object_for_primitive!(u8);
+impl_from_rdf_object_for_primitive!(u32);
+impl_from_rdf_object_for_primitive!(u64);
+
+impl_from_rdf_object_for_primitive!(f32);
+impl_from_rdf_object_for_primitive!(f64);
+
+impl_from_rdf_object_for_primitive!(String);

@@ -8,80 +8,6 @@ pub trait ToRdfProperty: Sized {
     fn to_property(&self, graph: &mut Graph, subject: &NamedOrBlankNode, predicate: &NamedNode);
 }
 
-// note: lot of repetition here. consider using a macro to generate some of these
-
-impl ToRdfProperty for BlankNode {
-    fn to_property(&self, graph: &mut Graph, subject: &NamedOrBlankNode, predicate: &NamedNode) {
-        let object_term = self.to_term(graph);
-
-        graph.insert(&Triple::new(
-            subject.as_ref(),
-            predicate.as_ref(),
-            object_term,
-        ));
-    }
-}
-
-impl ToRdfProperty for NamedNode {
-    fn to_property(&self, graph: &mut Graph, subject: &NamedOrBlankNode, predicate: &NamedNode) {
-        let object_term = self.to_term(graph);
-
-        graph.insert(&Triple::new(
-            subject.as_ref(),
-            predicate.as_ref(),
-            object_term,
-        ));
-    }
-}
-
-impl ToRdfProperty for NamedOrBlankNode {
-    fn to_property(&self, graph: &mut Graph, subject: &NamedOrBlankNode, predicate: &NamedNode) {
-        let object_term = self.to_term(graph);
-
-        graph.insert(&Triple::new(
-            subject.as_ref(),
-            predicate.as_ref(),
-            object_term,
-        ));
-    }
-}
-
-impl ToRdfProperty for Literal {
-    fn to_property(&self, graph: &mut Graph, subject: &NamedOrBlankNode, predicate: &NamedNode) {
-        let object_term = self.to_term(graph);
-
-        graph.insert(&Triple::new(
-            subject.as_ref(),
-            predicate.as_ref(),
-            object_term,
-        ));
-    }
-}
-
-impl ToRdfProperty for Term {
-    fn to_property(&self, graph: &mut Graph, subject: &NamedOrBlankNode, predicate: &NamedNode) {
-        let object_term = self.to_term(graph);
-
-        graph.insert(&Triple::new(
-            subject.as_ref(),
-            predicate.as_ref(),
-            object_term,
-        ));
-    }
-}
-
-impl ToRdfProperty for String {
-    fn to_property(&self, graph: &mut Graph, subject: &NamedOrBlankNode, predicate: &NamedNode) {
-        let object_term = self.to_term(graph);
-
-        graph.insert(&Triple::new(
-            subject.as_ref(),
-            predicate.as_ref(),
-            object_term,
-        ));
-    }
-}
-
 impl<T: ToRdfProperty> ToRdfProperty for Option<T> {
     fn to_property(&self, graph: &mut Graph, subject: &NamedOrBlankNode, predicate: &NamedNode) {
         if let Some(value) = self {
@@ -97,3 +23,46 @@ impl<T: ToRdfProperty> ToRdfProperty for Vec<T> {
         }
     }
 }
+
+// the name of this is because the types this macro will be used for implement ToRdfObject
+macro_rules! impl_to_rdf_property_for_object {
+    ($t:ty) => {
+        impl ToRdfProperty for $t {
+            fn to_property(
+                &self,
+                graph: &mut Graph,
+                subject: &NamedOrBlankNode,
+                predicate: &NamedNode,
+            ) {
+                let object_term = self.to_term(graph);
+
+                graph.insert(&Triple::new(
+                    subject.as_ref(),
+                    predicate.as_ref(),
+                    object_term,
+                ));
+            }
+        }
+    };
+}
+
+impl_to_rdf_property_for_object!(BlankNode);
+impl_to_rdf_property_for_object!(NamedNode);
+impl_to_rdf_property_for_object!(NamedOrBlankNode);
+impl_to_rdf_property_for_object!(Literal);
+impl_to_rdf_property_for_object!(Term);
+
+impl_to_rdf_property_for_object!(bool);
+
+impl_to_rdf_property_for_object!(i8);
+impl_to_rdf_property_for_object!(i32);
+impl_to_rdf_property_for_object!(i64);
+
+impl_to_rdf_property_for_object!(u8);
+impl_to_rdf_property_for_object!(u32);
+impl_to_rdf_property_for_object!(u64);
+
+impl_to_rdf_property_for_object!(f32);
+impl_to_rdf_property_for_object!(f64);
+
+impl_to_rdf_property_for_object!(String);
