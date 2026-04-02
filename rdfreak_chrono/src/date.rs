@@ -1,13 +1,10 @@
-use std::ops::Deref;
+use std::{fmt::Display, ops::Deref, str::FromStr};
 
-use oxrdf::{Graph, Literal, NamedNode, NamedOrBlankNode, Term, Triple};
-use rdfreak::{
-    DeserializeLiteralError, DeserializeLiteralResult, DeserializeRdfObjectError,
-    DeserializeRdfObjectResult, DeserializeRdfPropertyError, DeserializeRdfPropertyResult,
-    RdfLiteral, RdfObject, RdfProperty,
-};
+use rdfreak_derive::RdfLiteral;
 
 /// A wrapper around `chrono::NaiveDate` for representing xsd:date literals in RDF.
+#[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord, RdfLiteral)]
+#[rdf(datatype = "http://www.w3.org/2001/XMLSchema#date")]
 pub struct Date(chrono::NaiveDate);
 
 impl Date {
@@ -17,6 +14,22 @@ impl Date {
 
     pub fn inner(&self) -> chrono::NaiveDate {
         self.0
+    }
+}
+
+impl Display for Date {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0.format("%Y-%m-%d"))
+    }
+}
+
+impl FromStr for Date {
+    type Err = chrono::ParseError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let date = chrono::NaiveDate::parse_from_str(s, "%Y-%m-%d")?;
+
+        Ok(Self::new(date))
     }
 }
 
@@ -40,82 +53,36 @@ impl From<Date> for chrono::NaiveDate {
     }
 }
 
-impl RdfLiteral for Date {
-    fn to_literal(&self) -> Literal {
-        let formatted = self.0.format("%Y-%m-%d").to_string();
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-        Literal::new_typed_literal(
-            formatted,
-            NamedNode::new_unchecked("http://www.w3.org/2001/XMLSchema#date"),
-        )
+    use oxrdf::{Literal, NamedNode};
+    use rdfreak::{FromRdfLiteral, ToRdfLiteral};
+
+    #[test]
+    fn test_to_literal() {
+        let date = Date::from_str("2024-01-01").unwrap();
+        let date_literal = date.to_literal();
+
+        let expected_literal = Literal::new_typed_literal(
+            "2024-01-01".to_owned(),
+            NamedNode::new("http://www.w3.org/2001/XMLSchema#date").unwrap(),
+        );
+
+        assert_eq!(date_literal, expected_literal);
     }
 
-    fn from_literal(literal: &Literal) -> DeserializeLiteralResult<Self> {
-        if literal.datatype().as_str() != "http://www.w3.org/2001/XMLSchema#date" {
-            return Err(DeserializeLiteralError::InvalidDatatype {
-                expected: "http://www.w3.org/2001/XMLSchema#date".to_owned(),
-                actual: literal.datatype().as_str().to_owned(),
-            });
-        }
+    #[test]
+    fn test_from_literal() {
+        let date_literal = Literal::new_typed_literal(
+            "2024-01-01".to_owned(),
+            NamedNode::new("http://www.w3.org/2001/XMLSchema#date").unwrap(),
+        );
 
-        let chrono_date =
-            chrono::NaiveDate::parse_from_str(literal.value(), "%Y-%m-%d").map_err(|err| {
-                DeserializeLiteralError::FailedToParse(format!(
-                    "Failed to parse '{}' as date: {}",
-                    literal.value(),
-                    err
-                ))
-            })?;
+        let date = Date::from_literal(&date_literal).unwrap();
+        let expected_date = Date::from_str("2024-01-01").unwrap();
 
-        Ok(Self::new(chrono_date))
-    }
-}
-
-impl RdfObject for Date {
-    fn to_term(&self) -> Term {
-        Term::Literal(self.to_literal())
-    }
-
-    fn from_term(_graph: &Graph, term: &Term) -> DeserializeRdfObjectResult<Self> {
-        let oxrdf::Term::Literal(lit) = term else {
-            return Err(DeserializeRdfObjectError::UnexpectedTermType(term.clone()));
-        };
-
-        let value = Self::from_literal(lit)?;
-
-        Ok(value)
-    }
-}
-
-impl RdfProperty for Date {
-    fn serialize_property(
-        &self,
-        graph: &mut Graph,
-        subject: &NamedOrBlankNode,
-        predicate: &NamedNode,
-    ) {
-        graph.insert(&Triple::new(
-            subject.as_ref(),
-            predicate.as_ref(),
-            self.to_term(),
-        ));
-    }
-
-    fn deserialize_property(
-        graph: &Graph,
-        subject: &NamedOrBlankNode,
-        predicate: &NamedNode,
-    ) -> DeserializeRdfPropertyResult<Self> {
-        let maybe_object_term = graph.object_for_subject_predicate(subject, predicate);
-
-        let Some(object_term) = maybe_object_term else {
-            return Err(DeserializeRdfPropertyError::MissingObjectValue(
-                predicate.clone(),
-            ));
-        };
-
-        let object_value = Self::from_term(graph, &object_term.into())?;
-
-        Ok(object_value)
+        assert_eq!(date, expected_date);
     }
 }

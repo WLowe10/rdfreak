@@ -5,54 +5,50 @@ use rdfreak_derive::RdfLiteral;
 /// A wrapper around `chrono::NaiveDateTime` for representing xsd:dateTime literals in RDF.
 #[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord, RdfLiteral)]
 #[rdf(datatype = "http://www.w3.org/2001/XMLSchema#dateTime")]
-pub struct DateTime(chrono::DateTime<chrono::Utc>);
+pub struct NaiveDateTime(chrono::NaiveDateTime);
 
-impl DateTime {
-    pub fn new(date: chrono::DateTime<chrono::Utc>) -> Self {
+impl NaiveDateTime {
+    pub fn new(date: chrono::NaiveDateTime) -> Self {
         Self(date)
     }
 
-    pub fn inner(&self) -> chrono::DateTime<chrono::Utc> {
+    pub fn inner(&self) -> chrono::NaiveDateTime {
         self.0
     }
 }
 
-impl Display for DateTime {
+impl Display for NaiveDateTime {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            self.0.to_rfc3339_opts(chrono::SecondsFormat::Secs, true)
-        )
+        write!(f, "{}", self.0.format("%Y-%m-%dT%H:%M:%S"))
     }
 }
 
-impl FromStr for DateTime {
+impl FromStr for NaiveDateTime {
     type Err = chrono::ParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let date_time = chrono::DateTime::parse_from_rfc3339(s)?.with_timezone(&chrono::Utc);
+        let date_time = chrono::NaiveDateTime::parse_from_str(s, "%Y-%m-%dT%H:%M:%S")?;
 
         Ok(Self::new(date_time))
     }
 }
 
-impl Deref for DateTime {
-    type Target = chrono::DateTime<chrono::Utc>;
+impl Deref for NaiveDateTime {
+    type Target = chrono::NaiveDateTime;
 
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
-impl From<chrono::DateTime<chrono::Utc>> for DateTime {
-    fn from(date: chrono::DateTime<chrono::Utc>) -> Self {
+impl From<chrono::NaiveDateTime> for NaiveDateTime {
+    fn from(date: chrono::NaiveDateTime) -> Self {
         Self::new(date)
     }
 }
 
-impl From<DateTime> for chrono::DateTime<chrono::Utc> {
-    fn from(date: DateTime) -> Self {
+impl From<NaiveDateTime> for chrono::NaiveDateTime {
+    fn from(date: NaiveDateTime) -> Self {
         date.0
     }
 }
@@ -66,26 +62,26 @@ mod tests {
 
     #[test]
     fn test_to_literal() {
-        let date = DateTime::from_str("2024-01-01T12:00:00Z").unwrap();
-        let date_literal = date.to_literal();
+        let date_time = NaiveDateTime::from_str("2024-01-01T12:00:00").unwrap();
+        let date_time_literal = date_time.to_literal();
 
         let expected_literal = Literal::new_typed_literal(
-            "2024-01-01T12:00:00Z".to_owned(),
+            "2024-01-01T12:00:00",
             NamedNode::new("http://www.w3.org/2001/XMLSchema#dateTime").unwrap(),
         );
 
-        assert_eq!(date_literal, expected_literal);
+        assert_eq!(date_time_literal, expected_literal);
     }
 
     #[test]
     fn test_from_literal() {
         let date_time_literal = Literal::new_typed_literal(
-            "2024-01-01T12:00:00Z".to_owned(),
+            "2024-01-01T12:00:00".to_owned(),
             NamedNode::new("http://www.w3.org/2001/XMLSchema#dateTime").unwrap(),
         );
 
-        let date_time = DateTime::from_literal(&date_time_literal).unwrap();
-        let expected_date_time = DateTime::from_str("2024-01-01T12:00:00Z").unwrap();
+        let date_time = NaiveDateTime::from_literal(&date_time_literal).unwrap();
+        let expected_date_time = NaiveDateTime::from_str("2024-01-01T12:00:00").unwrap();
 
         assert_eq!(date_time, expected_date_time);
     }

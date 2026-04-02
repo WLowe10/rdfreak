@@ -1,14 +1,16 @@
 [package]
 name = "rdfreak_chrono"
 version = "0.1.0"
-description = "Chrono types for rdfreak"
+description = "Chrono literals for rdfreak"
 edition.workspace = true
 repository.workspace = true
 keywords.workspace = true
 license.workspace = true
+readme.workspace = true
 
 [dependencies]
 rdfreak = { path = "../rdfreak" }
+rdfreak_derive = { path = "../rdfreak_derive" }
 oxrdf = { workspace = true }
 chrono = "0.4"
 
