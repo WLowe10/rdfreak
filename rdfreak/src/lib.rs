@@ -1,11 +1,16 @@
+// serialization/deserialization
+
 pub mod to_rdf;
 pub use to_rdf::*;
 
 pub mod from_rdf;
 pub use from_rdf::*;
 
-pub mod literal;
-pub use literal::*;
+pub mod to_rdf_literal;
+pub use to_rdf_literal::*;
+
+pub mod from_rdf_literal;
+pub use from_rdf_literal::*;
 
 pub mod to_rdf_object;
 pub use to_rdf_object::*;
@@ -19,8 +24,12 @@ pub use to_rdf_property::*;
 pub mod from_rdf_property;
 pub use from_rdf_property::*;
 
+// resource
+
 pub mod resource;
 pub use resource::*;
+
+// construct query generation
 
 pub mod sparql_variable_generator;
 pub use sparql_variable_generator::*;
@@ -33,6 +42,8 @@ pub use constructible::*;
 
 pub mod constructible_property;
 pub use constructible_property::*;
+
+// utils
 
 pub mod rdf_type;
 pub use rdf_type::*;

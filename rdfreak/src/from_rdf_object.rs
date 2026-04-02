@@ -1,6 +1,6 @@
 use oxrdf::{BlankNode, Graph, Literal, NamedNode, NamedOrBlankNode, Term};
 
-use crate::{DeserializeLiteralError, RdfLiteral, ResourceError};
+use crate::{FromRdfLiteral, RdfLiteralError, ResourceError};
 
 #[derive(Debug, thiserror::Error)]
 pub enum RdfObjectError {
@@ -8,7 +8,7 @@ pub enum RdfObjectError {
     UnexpectedTermType(Term),
 
     #[error(transparent)]
-    Literal(#[from] DeserializeLiteralError),
+    Literal(#[from] RdfLiteralError),
 
     #[error(transparent)]
     Resource(#[from] ResourceError),
