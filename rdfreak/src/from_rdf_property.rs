@@ -23,6 +23,18 @@ pub trait FromRdfProperty: Sized {
     ) -> DeserializeRdfPropertyResult<Self>;
 }
 
+impl<T: FromRdfProperty> FromRdfProperty for Box<T> {
+    fn from_property(
+        graph: &Graph,
+        subject: &NamedOrBlankNode,
+        predicate: &NamedNode,
+    ) -> DeserializeRdfPropertyResult<Self> {
+        let inner_value = T::from_property(graph, subject, predicate)?;
+
+        Ok(Box::new(inner_value))
+    }
+}
+
 impl<T: FromRdfObject> FromRdfProperty for Option<T> {
     fn from_property(
         graph: &Graph,

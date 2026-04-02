@@ -13,6 +13,22 @@ pub trait ConstructibleProperty {
     );
 }
 
+impl<T: ConstructibleProperty> ConstructibleProperty for Box<T> {
+    fn insert_patterns(
+        construct_query_patterns: &mut ConstructQueryPatterns,
+        variable_generator: &mut SparqlVariableGenerator,
+        subject_variable: &str,
+        predicate: &NamedNode,
+    ) {
+        T::insert_patterns(
+            construct_query_patterns,
+            variable_generator,
+            subject_variable,
+            predicate,
+        );
+    }
+}
+
 impl<T: ConstructibleProperty> ConstructibleProperty for Option<T> {
     fn insert_patterns(
         construct_query_patterns: &mut ConstructQueryPatterns,

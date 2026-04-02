@@ -8,6 +8,12 @@ pub trait ToRdfProperty: Sized {
     fn to_property(&self, graph: &mut Graph, subject: &NamedOrBlankNode, predicate: &NamedNode);
 }
 
+impl<T: ToRdfProperty> ToRdfProperty for Box<T> {
+    fn to_property(&self, graph: &mut Graph, subject: &NamedOrBlankNode, predicate: &NamedNode) {
+        self.as_ref().to_property(graph, subject, predicate);
+    }
+}
+
 impl<T: ToRdfProperty> ToRdfProperty for Option<T> {
     fn to_property(&self, graph: &mut Graph, subject: &NamedOrBlankNode, predicate: &NamedNode) {
         if let Some(value) = self {
