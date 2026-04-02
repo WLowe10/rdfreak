@@ -1,4 +1,4 @@
-use oxrdf::NamedNode;
+use oxrdf::{BlankNode, Literal, NamedNode, NamedOrBlankNode, Term};
 
 use crate::{ConstructQueryPatterns, SparqlVariableGenerator, TriplePattern, TriplePatternNode};
 
@@ -65,7 +65,7 @@ impl<T: ConstructibleProperty> ConstructibleProperty for Vec<T> {
     }
 }
 
-macro_rules! impl_constructible_property_for_primitive {
+macro_rules! impl_constructible_property_for {
     ($t:ty) => {
         impl ConstructibleProperty for $t {
             fn insert_patterns(
@@ -88,17 +88,23 @@ macro_rules! impl_constructible_property_for_primitive {
     };
 }
 
-impl_constructible_property_for_primitive!(bool);
+impl_constructible_property_for!(BlankNode);
+impl_constructible_property_for!(NamedNode);
+impl_constructible_property_for!(NamedOrBlankNode);
+impl_constructible_property_for!(Literal);
+impl_constructible_property_for!(Term);
 
-impl_constructible_property_for_primitive!(i8);
-impl_constructible_property_for_primitive!(i32);
-impl_constructible_property_for_primitive!(i64);
+impl_constructible_property_for!(bool);
 
-impl_constructible_property_for_primitive!(u8);
-impl_constructible_property_for_primitive!(u32);
-impl_constructible_property_for_primitive!(u64);
+impl_constructible_property_for!(i8);
+impl_constructible_property_for!(i32);
+impl_constructible_property_for!(i64);
 
-impl_constructible_property_for_primitive!(f32);
-impl_constructible_property_for_primitive!(f64);
+impl_constructible_property_for!(u8);
+impl_constructible_property_for!(u32);
+impl_constructible_property_for!(u64);
 
-impl_constructible_property_for_primitive!(String);
+impl_constructible_property_for!(f32);
+impl_constructible_property_for!(f64);
+
+impl_constructible_property_for!(String);
