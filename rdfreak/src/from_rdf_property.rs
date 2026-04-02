@@ -3,28 +3,28 @@ use oxrdf::{BlankNode, Graph, Literal, NamedNode, NamedOrBlankNode, Term};
 use crate::{DeserializeRdfObjectError, FromRdfObject};
 
 #[derive(Debug, thiserror::Error)]
-pub enum DeserializeRdfPropertyError {
+pub enum RdfPropertyError {
     #[error("Missing object value for property {0}")]
     MissingObjectValue(NamedNode),
 
     #[error(transparent)]
-    FailedToDeserializeObject(#[from] DeserializeRdfObjectError),
+    Object(#[from] DeserializeRdfObjectError),
 }
 
-pub type DeserializeRdfPropertyResult<T> = Result<T, DeserializeRdfPropertyError>;
+pub type DeserializeRdfPropertyResult<T> = Result<T, RdfPropertyError>;
 
 /// A trait for deserializing a property value from an RDF graph, given a subject and predicate.
-pub trait DeserializeRdfProperty: Sized {
+pub trait FromRdfProperty: Sized {
     /// Deserializes the property value from the given graph, using the provided subject and predicate.
-    fn deserialize_property(
+    fn from_property(
         graph: &Graph,
         subject: &NamedOrBlankNode,
         predicate: &NamedNode,
     ) -> DeserializeRdfPropertyResult<Self>;
 }
 
-impl DeserializeRdfProperty for BlankNode {
-    fn deserialize_property(
+impl FromRdfProperty for BlankNode {
+    fn from_property(
         graph: &Graph,
         subject: &NamedOrBlankNode,
         predicate: &NamedNode,
@@ -32,9 +32,7 @@ impl DeserializeRdfProperty for BlankNode {
         let maybe_object_term = graph.object_for_subject_predicate(subject, predicate);
 
         let Some(object_term) = maybe_object_term else {
-            return Err(DeserializeRdfPropertyError::MissingObjectValue(
-                predicate.clone(),
-            ));
+            return Err(RdfPropertyError::MissingObjectValue(predicate.clone()));
         };
 
         let object_value = Self::from_term(graph, &object_term.into())?;
@@ -43,8 +41,8 @@ impl DeserializeRdfProperty for BlankNode {
     }
 }
 
-impl DeserializeRdfProperty for NamedNode {
-    fn deserialize_property(
+impl FromRdfProperty for NamedNode {
+    fn from_property(
         graph: &Graph,
         subject: &NamedOrBlankNode,
         predicate: &NamedNode,
@@ -52,9 +50,7 @@ impl DeserializeRdfProperty for NamedNode {
         let maybe_object_term = graph.object_for_subject_predicate(subject, predicate);
 
         let Some(object_term) = maybe_object_term else {
-            return Err(DeserializeRdfPropertyError::MissingObjectValue(
-                predicate.clone(),
-            ));
+            return Err(RdfPropertyError::MissingObjectValue(predicate.clone()));
         };
 
         let object_value = Self::from_term(graph, &object_term.into())?;
@@ -63,8 +59,8 @@ impl DeserializeRdfProperty for NamedNode {
     }
 }
 
-impl DeserializeRdfProperty for NamedOrBlankNode {
-    fn deserialize_property(
+impl FromRdfProperty for NamedOrBlankNode {
+    fn from_property(
         graph: &Graph,
         subject: &NamedOrBlankNode,
         predicate: &NamedNode,
@@ -72,9 +68,7 @@ impl DeserializeRdfProperty for NamedOrBlankNode {
         let maybe_object_term = graph.object_for_subject_predicate(subject, predicate);
 
         let Some(object_term) = maybe_object_term else {
-            return Err(DeserializeRdfPropertyError::MissingObjectValue(
-                predicate.clone(),
-            ));
+            return Err(RdfPropertyError::MissingObjectValue(predicate.clone()));
         };
 
         let object_value = Self::from_term(graph, &object_term.into())?;
@@ -83,8 +77,8 @@ impl DeserializeRdfProperty for NamedOrBlankNode {
     }
 }
 
-impl DeserializeRdfProperty for Literal {
-    fn deserialize_property(
+impl FromRdfProperty for Literal {
+    fn from_property(
         graph: &Graph,
         subject: &NamedOrBlankNode,
         predicate: &NamedNode,
@@ -92,9 +86,7 @@ impl DeserializeRdfProperty for Literal {
         let maybe_object_term = graph.object_for_subject_predicate(subject, predicate);
 
         let Some(object_term) = maybe_object_term else {
-            return Err(DeserializeRdfPropertyError::MissingObjectValue(
-                predicate.clone(),
-            ));
+            return Err(RdfPropertyError::MissingObjectValue(predicate.clone()));
         };
 
         let object_value = Self::from_term(graph, &object_term.into())?;
@@ -103,8 +95,8 @@ impl DeserializeRdfProperty for Literal {
     }
 }
 
-impl DeserializeRdfProperty for Term {
-    fn deserialize_property(
+impl FromRdfProperty for Term {
+    fn from_property(
         graph: &Graph,
         subject: &NamedOrBlankNode,
         predicate: &NamedNode,
@@ -112,17 +104,15 @@ impl DeserializeRdfProperty for Term {
         let maybe_object_term = graph.object_for_subject_predicate(subject, predicate);
 
         let Some(object_term) = maybe_object_term else {
-            return Err(DeserializeRdfPropertyError::MissingObjectValue(
-                predicate.clone(),
-            ));
+            return Err(RdfPropertyError::MissingObjectValue(predicate.clone()));
         };
 
         Ok(object_term.into())
     }
 }
 
-impl DeserializeRdfProperty for String {
-    fn deserialize_property(
+impl FromRdfProperty for String {
+    fn from_property(
         graph: &Graph,
         subject: &NamedOrBlankNode,
         predicate: &NamedNode,
@@ -130,9 +120,7 @@ impl DeserializeRdfProperty for String {
         let maybe_object_term = graph.object_for_subject_predicate(subject, predicate);
 
         let Some(object_term) = maybe_object_term else {
-            return Err(DeserializeRdfPropertyError::MissingObjectValue(
-                predicate.clone(),
-            ));
+            return Err(RdfPropertyError::MissingObjectValue(predicate.clone()));
         };
 
         let object_value = Self::from_term(graph, &object_term.into())?;
@@ -141,8 +129,8 @@ impl DeserializeRdfProperty for String {
     }
 }
 
-impl<T: FromRdfObject> DeserializeRdfProperty for Option<T> {
-    fn deserialize_property(
+impl<T: FromRdfObject> FromRdfProperty for Option<T> {
+    fn from_property(
         graph: &Graph,
         subject: &NamedOrBlankNode,
         predicate: &NamedNode,
@@ -159,8 +147,8 @@ impl<T: FromRdfObject> DeserializeRdfProperty for Option<T> {
     }
 }
 
-impl<T: FromRdfObject> DeserializeRdfProperty for Vec<T> {
-    fn deserialize_property(
+impl<T: FromRdfObject> FromRdfProperty for Vec<T> {
+    fn from_property(
         graph: &Graph,
         subject: &NamedOrBlankNode,
         predicate: &NamedNode,

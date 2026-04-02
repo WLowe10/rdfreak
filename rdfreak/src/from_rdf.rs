@@ -1,9 +1,9 @@
 use oxrdf::{Graph, NamedNode, NamedOrBlankNode};
 
-use crate::DeserializeRdfPropertyError;
+use crate::RdfPropertyError;
 
 #[derive(Debug, thiserror::Error)]
-pub enum DeserializeResourceError {
+pub enum ResourceError {
     #[error("Missing rdf:type")]
     MissingRdfType,
 
@@ -15,18 +15,18 @@ pub enum DeserializeResourceError {
     },
 
     #[error("Failed to deserialize property '{property}' for subject {subject:?}: {source}")]
-    FailedToDeserializeProperty {
+    Property {
         subject: NamedOrBlankNode,
         property: String,
         #[source]
-        source: Box<DeserializeRdfPropertyError>,
+        source: Box<RdfPropertyError>,
     },
 }
 
-pub type DeserializeResourceResult<T> = Result<T, DeserializeResourceError>;
+pub type FromResourceResult<T> = Result<T, ResourceError>;
 
 /// A trait for converting an RDF graph into an instance of a type.
 pub trait FromRdf: Sized {
     /// Converts an RDF graph into an instance of the implementing type.
-    fn from_rdf(graph: &Graph, subject: &NamedOrBlankNode) -> DeserializeResourceResult<Self>;
+    fn from_rdf(graph: &Graph, subject: &NamedOrBlankNode) -> FromResourceResult<Self>;
 }

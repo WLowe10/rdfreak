@@ -38,7 +38,7 @@ pub fn derive_to_rdf_impl(input: syn::DeriveInput) -> syn::Result<TokenStream> {
             let predicate = attr.predicate.as_ref().unwrap();
 
             quote! {
-                ::rdfreak::SerializeRdfProperty::serialize_property(&self.#field_ident, graph, subject, &::oxrdf::NamedNode::new_unchecked(#predicate));
+                ::rdfreak::ToRdfProperty::to_property(&self.#field_ident, graph, subject, &::oxrdf::NamedNode::new_unchecked(#predicate));
             }
         })
         .collect::<Vec<_>>();
@@ -71,8 +71,8 @@ pub fn derive_to_rdf_impl(input: syn::DeriveInput) -> syn::Result<TokenStream> {
             }
         }
 
-        impl ::rdfreak::SerializeRdfProperty for #struct_identifier {
-            fn serialize_property(&self, graph: &mut ::oxrdf::Graph, subject: &::oxrdf::NamedOrBlankNode, predicate: &::oxrdf::NamedNode) {
+        impl ::rdfreak::ToRdfProperty for #struct_identifier {
+            fn to_property(&self, graph: &mut ::oxrdf::Graph, subject: &::oxrdf::NamedOrBlankNode, predicate: &::oxrdf::NamedNode) {
                 let object_term = ::rdfreak::ToRdfObject::to_term(self, graph);
 
                 graph.insert(&::oxrdf::Triple::new(
@@ -121,9 +121,9 @@ mod tests {
                         <Self as ::rdfreak::Resource>::get_rdf_type().as_ref(),
                     ));
 
-                    ::rdfreak::SerializeRdfProperty::serialize_property(&self.name, graph, subject, &::oxrdf::NamedNode::new_unchecked("http://example.org/name"));
-                    ::rdfreak::SerializeRdfProperty::serialize_property(&self.age, graph, subject, &::oxrdf::NamedNode::new_unchecked("http://example.org/age"));
-                    ::rdfreak::SerializeRdfProperty::serialize_property(&self.occupation, graph, subject, &::oxrdf::NamedNode::new_unchecked("http://example.org/occupation"));
+                    ::rdfreak::ToRdfProperty::to_property(&self.name, graph, subject, &::oxrdf::NamedNode::new_unchecked("http://example.org/name"));
+                    ::rdfreak::ToRdfProperty::to_property(&self.age, graph, subject, &::oxrdf::NamedNode::new_unchecked("http://example.org/age"));
+                    ::rdfreak::ToRdfProperty::to_property(&self.occupation, graph, subject, &::oxrdf::NamedNode::new_unchecked("http://example.org/occupation"));
                 }
             }
 
@@ -140,8 +140,8 @@ mod tests {
                 }
             }
 
-            impl ::rdfreak::SerializeRdfProperty for Person {
-                fn serialize_property(&self, graph: &mut ::oxrdf::Graph, subject: &::oxrdf::NamedOrBlankNode, predicate: &::oxrdf::NamedNode) {
+            impl ::rdfreak::ToRdfProperty for Person {
+                fn to_property(&self, graph: &mut ::oxrdf::Graph, subject: &::oxrdf::NamedOrBlankNode, predicate: &::oxrdf::NamedNode) {
                     let object_term = ::rdfreak::ToRdfObject::to_term(self, graph);
 
                     graph.insert(&::oxrdf::Triple::new(

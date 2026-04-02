@@ -1,8 +1,8 @@
 use oxrdf::{Graph, NamedNode, NamedOrBlankNode, Term, Triple};
 
 use rdfreak::{
-    DeserializeRdfObjectResult, DeserializeRdfProperty, DeserializeRdfPropertyError,
-    DeserializeRdfPropertyResult, FromRdfObject, SerializeRdfProperty, ToRdfObject,
+    DeserializeRdfObjectResult, RdfPropertyError, DeserializeRdfPropertyResult,
+    FromRdfObject, FromRdfProperty, ToRdfObject, ToRdfProperty,
 };
 
 /// Represents a reference to an RDF object term that can be deserialized into a value of type T.
@@ -41,13 +41,8 @@ impl<T: FromRdfObject> FromRdfObject for ObjectRef<T> {
     }
 }
 
-impl<T> SerializeRdfProperty for ObjectRef<T> {
-    fn serialize_property(
-        &self,
-        graph: &mut Graph,
-        subject: &NamedOrBlankNode,
-        predicate: &NamedNode,
-    ) {
+impl<T> ToRdfProperty for ObjectRef<T> {
+    fn to_property(&self, graph: &mut Graph, subject: &NamedOrBlankNode, predicate: &NamedNode) {
         graph.insert(&Triple::new(
             subject.clone(),
             predicate.clone(),
@@ -56,8 +51,8 @@ impl<T> SerializeRdfProperty for ObjectRef<T> {
     }
 }
 
-impl<T> DeserializeRdfProperty for ObjectRef<T> {
-    fn deserialize_property(
+impl<T> FromRdfProperty for ObjectRef<T> {
+    fn from_property(
         graph: &Graph,
         subject: &NamedOrBlankNode,
         predicate: &NamedNode,
@@ -65,7 +60,7 @@ impl<T> DeserializeRdfProperty for ObjectRef<T> {
         let maybe_object_term = graph.object_for_subject_predicate(subject, predicate);
 
         let Some(object_term) = maybe_object_term else {
-            return Err(DeserializeRdfPropertyError::MissingObjectValue(
+            return Err(RdfPropertyError::MissingObjectValue(
                 predicate.clone(),
             ));
         };

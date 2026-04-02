@@ -1,11 +1,11 @@
 use oxrdf::NamedNode;
 
-use crate::{DeserializeResourceResult, FromRdf, Resource};
+use crate::{FromRdf, FromResourceResult, Resource};
 
 /// Deserializes all resources of type `T` from the given RDF graph.
 pub fn deserialize_all<R: Resource + FromRdf>(
     graph: &oxrdf::Graph,
-) -> impl Iterator<Item = DeserializeResourceResult<R>> {
+) -> impl Iterator<Item = FromResourceResult<R>> {
     let resource_rdf_type = R::get_rdf_type();
 
     let rdf_type_predicate =

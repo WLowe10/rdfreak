@@ -1,9 +1,8 @@
 use oxrdf::{Graph, NamedNode, Term, Triple};
 
 use crate::{
-    DeserializeRdfObjectError, DeserializeRdfObjectResult, DeserializeRdfProperty,
-    DeserializeRdfPropertyError, DeserializeRdfPropertyResult, FromRdfObject, SerializeRdfProperty,
-    ToRdfObject,
+    DeserializeRdfObjectError, DeserializeRdfObjectResult, DeserializeRdfPropertyResult,
+    FromRdfObject, FromRdfProperty, RdfPropertyError, ToRdfObject, ToRdfProperty,
 };
 
 #[derive(Debug, Clone)]
@@ -37,8 +36,8 @@ impl FromRdfObject for RdfType {
     }
 }
 
-impl SerializeRdfProperty for RdfType {
-    fn serialize_property(
+impl ToRdfProperty for RdfType {
+    fn to_property(
         &self,
         graph: &mut Graph,
         subject: &oxrdf::NamedOrBlankNode,
@@ -54,8 +53,8 @@ impl SerializeRdfProperty for RdfType {
     }
 }
 
-impl DeserializeRdfProperty for RdfType {
-    fn deserialize_property(
+impl FromRdfProperty for RdfType {
+    fn from_property(
         graph: &Graph,
         subject: &oxrdf::NamedOrBlankNode,
         predicate: &NamedNode,
@@ -63,9 +62,7 @@ impl DeserializeRdfProperty for RdfType {
         let maybe_object_term = graph.object_for_subject_predicate(subject, predicate);
 
         let Some(object_term) = maybe_object_term else {
-            return Err(DeserializeRdfPropertyError::MissingObjectValue(
-                predicate.clone(),
-            ));
+            return Err(RdfPropertyError::MissingObjectValue(predicate.clone()));
         };
 
         let rdf_type = Self::from_term(graph, &object_term.into())?;

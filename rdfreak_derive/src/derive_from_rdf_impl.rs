@@ -49,7 +49,7 @@ pub fn derive_from_rdf_impl(input: syn::DeriveInput) -> syn::Result<TokenStream>
             let field_name_str = syn::LitStr::new(&field_ident.to_string(), field_ident.span());
 
             quote! {
-                #field_ident: ::rdfreak::DeserializeRdfProperty::deserialize_property(
+                #field_ident: ::rdfreak::FromRdfProperty::from_property(
                     graph,
                     subject,
                     &::oxrdf::NamedNode::new_unchecked(#predicate),
@@ -65,11 +65,11 @@ pub fn derive_from_rdf_impl(input: syn::DeriveInput) -> syn::Result<TokenStream>
     let tokens = quote! {
         impl ::rdfreak::FromRdf for #struct_identifier {
             fn from_rdf(graph: &::oxrdf::Graph, subject: &::oxrdf::NamedOrBlankNode) -> ::rdfreak::DeserializeResourceResult<Self> {
-                use ::rdfreak::DeserializeRdfProperty;
+                use ::rdfreak::FromRdfProperty;
 
                 let expected_rdf_type = <Self as ::rdfreak::Resource>::get_rdf_type();
 
-                let rdf_types = Vec::<::rdfreak::RdfType>::deserialize_property(
+                let rdf_types = Vec::<::rdfreak::RdfType>::from_property(
                     graph,
                     subject,
                     &NamedNode::new_unchecked("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
@@ -113,8 +113,8 @@ pub fn derive_from_rdf_impl(input: syn::DeriveInput) -> syn::Result<TokenStream>
             }
         }
 
-        impl ::rdfreak::DeserializeRdfProperty for #struct_identifier {
-            fn deserialize_property(graph: &::oxrdf::Graph, subject: &::oxrdf::NamedOrBlankNode, predicate: &::oxrdf::NamedNode) -> ::rdfreak::DeserializeRdfPropertyResult<Self> {
+        impl ::rdfreak::FromRdfProperty for #struct_identifier {
+            fn from_property(graph: &::oxrdf::Graph, subject: &::oxrdf::NamedOrBlankNode, predicate: &::oxrdf::NamedNode) -> ::rdfreak::DeserializeRdfPropertyResult<Self> {
                 let object_term = graph
                     .object_for_subject_predicate(subject, predicate)
                     .ok_or_else(|| ::rdfreak::DeserializeRdfPropertyError::MissingObjectValue(predicate.clone()))?;
@@ -155,11 +155,11 @@ mod tests {
         let expected = quote! {
             impl ::rdfreak::FromRdf for Person {
                 fn from_rdf(graph: &::oxrdf::Graph, subject: &::oxrdf::NamedOrBlankNode) -> ::rdfreak::DeserializeResourceResult<Self> {
-                    use ::rdfreak::DeserializeRdfProperty;
+                    use ::rdfreak::FromRdfProperty;
 
                     let expected_rdf_type = <Self as ::rdfreak::Resource>::get_rdf_type();
 
-                    let rdf_types = Vec::<::rdfreak::RdfType>::deserialize_property(
+                    let rdf_types = Vec::<::rdfreak::RdfType>::from_property(
                         graph,
                         subject,
                         &NamedNode::new_unchecked("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
@@ -186,7 +186,7 @@ mod tests {
 
                     Ok(Self {
                         subject: subject.clone(),
-                        name: ::rdfreak::DeserializeRdfProperty::deserialize_property(
+                        name: ::rdfreak::FromRdfProperty::from_property(
                             graph,
                             subject,
                             &::oxrdf::NamedNode::new_unchecked("http://example.org/name"),
@@ -198,7 +198,7 @@ mod tests {
                                 source: Box::new(err),
                             }
                         )?,
-                        age: ::rdfreak::DeserializeRdfProperty::deserialize_property(
+                        age: ::rdfreak::FromRdfProperty::from_property(
                             graph,
                             subject,
                             &::oxrdf::NamedNode::new_unchecked("http://example.org/age"),
@@ -210,7 +210,7 @@ mod tests {
                                 source: Box::new(err),
                             }
                         )?,
-                        occupation: ::rdfreak::DeserializeRdfProperty::deserialize_property(
+                        occupation: ::rdfreak::FromRdfProperty::from_property(
                             graph,
                             subject,
                             &::oxrdf::NamedNode::new_unchecked("http://example.org/occupation"),
@@ -238,8 +238,8 @@ mod tests {
                 }
             }
 
-            impl ::rdfreak::DeserializeRdfProperty for Person {
-                fn deserialize_property(graph: &::oxrdf::Graph, subject: &::oxrdf::NamedOrBlankNode, predicate: &::oxrdf::NamedNode) -> ::rdfreak::DeserializeRdfPropertyResult<Self> {
+            impl ::rdfreak::FromRdfProperty for Person {
+                fn from_property(graph: &::oxrdf::Graph, subject: &::oxrdf::NamedOrBlankNode, predicate: &::oxrdf::NamedNode) -> ::rdfreak::DeserializeRdfPropertyResult<Self> {
                     let object_term = graph
                         .object_for_subject_predicate(subject, predicate)
                         .ok_or_else(|| ::rdfreak::DeserializeRdfPropertyError::MissingObjectValue(predicate.clone()))?;

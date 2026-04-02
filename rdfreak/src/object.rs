@@ -1,6 +1,6 @@
 use oxrdf::{BlankNode, Graph, Literal, NamedNode, NamedOrBlankNode, Term};
 
-use crate::{DeserializeLiteralError, DeserializeResourceError, RdfLiteral};
+use crate::{DeserializeLiteralError, RdfLiteral, ResourceError};
 
 /// Represents a type that can be converted to an RDF term that can be used as the object term in a triple.
 pub trait ToRdfObject {
@@ -17,7 +17,7 @@ pub enum DeserializeRdfObjectError {
     FailedToDeserializeLiteral(#[from] DeserializeLiteralError),
 
     #[error(transparent)]
-    FailedToDeserializeResource(#[from] DeserializeResourceError),
+    FailedToDeserializeResource(#[from] ResourceError),
 }
 
 pub type DeserializeRdfObjectResult<T> = Result<T, DeserializeRdfObjectError>;

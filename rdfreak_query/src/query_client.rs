@@ -3,8 +3,8 @@ use std::{error::Error, sync::Arc};
 use oxrdf::{Graph, NamedOrBlankNode};
 use oxttl::TurtleSerializer;
 use rdfreak::{
-    ConstructQueryPatterns, Constructible, DeserializeResourceError, DeserializeResourceResult,
-    FromRdf, Resource, SparqlVariableGenerator, ToRdf, TriplePattern, deserialize_all,
+    ConstructQueryPatterns, Constructible, FromRdf, FromResourceResult, Resource, ResourceError,
+    SparqlVariableGenerator, ToRdf, TriplePattern,
 };
 
 use crate::GraphDatabase;
@@ -19,7 +19,7 @@ pub enum QueryError {
     FailedToQueryGraph(Box<dyn Error>),
 
     #[error("Failed to deserialize resource: {0}")]
-    FailedToDeserializeResource(DeserializeResourceError),
+    FailedToDeserializeResource(ResourceError),
 }
 
 fn format_triple_patterns(triples: &[TriplePattern]) -> String {
@@ -69,7 +69,7 @@ impl QueryClient {
 
         match resource_result {
             Ok(resource) => Ok(Some(resource)),
-            Err(DeserializeResourceError::InvalidRdfType { .. }) => Ok(None),
+            Err(ResourceError::InvalidRdfType { .. }) => Ok(None),
             Err(err) => Err(QueryError::FailedToDeserializeResource(err)),
         }
     }
@@ -102,7 +102,7 @@ impl QueryClient {
             .map_err(QueryError::FailedToQueryGraph)?;
 
         let entities = rdfreak::deserialize_all::<R>(&result_graph)
-            .collect::<DeserializeResourceResult<_>>()
+            .collect::<FromResourceResult<_>>()
             .map_err(QueryError::FailedToDeserializeResource)?;
 
         Ok(entities)
