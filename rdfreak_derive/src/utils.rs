@@ -5,6 +5,8 @@ pub fn get_rdf_attribute(attributes: &[syn::Attribute]) -> Option<&syn::Attribut
     attributes.iter().find(|attr| attr.path().is_ident("rdf"))
 }
 
+// resource structs
+
 #[derive(Debug, FromMeta)]
 pub struct ResourceStructRdfAttributes {
     #[darling(rename = "type")]
@@ -12,7 +14,7 @@ pub struct ResourceStructRdfAttributes {
 }
 
 /// parses the expected RDF attributes from a resource struct-level attribute
-pub fn parse_struct_rdf_attributes(
+pub fn parse_resource_struct_rdf_attributes(
     input: &syn::DeriveInput,
 ) -> syn::Result<ResourceStructRdfAttributes> {
     let attr = get_rdf_attribute(&input.attrs).ok_or_else(|| {
@@ -24,7 +26,7 @@ pub fn parse_struct_rdf_attributes(
 }
 
 #[derive(Debug, FromMeta)]
-pub struct StructFieldRdfAttributes {
+pub struct ResourceStructFieldRdfAttributes {
     #[darling(default, rename = "subject")]
     pub is_subject: bool,
 
@@ -32,9 +34,9 @@ pub struct StructFieldRdfAttributes {
 }
 
 /// parses the expected RDF attributes from a struct field-level attribute
-pub fn parse_struct_field_rdf_attributes(
+pub fn parse_resource_struct_field_rdf_attributes(
     field: &syn::Field,
-) -> syn::Result<StructFieldRdfAttributes> {
+) -> syn::Result<ResourceStructFieldRdfAttributes> {
     let attr = get_rdf_attribute(&field.attrs).ok_or_else(|| {
         syn::Error::new_spanned(
             field,
@@ -42,13 +44,13 @@ pub fn parse_struct_field_rdf_attributes(
         )
     })?;
 
-    StructFieldRdfAttributes::from_meta(&attr.meta)
+    ResourceStructFieldRdfAttributes::from_meta(&attr.meta)
         .map_err(|err| syn::Error::new_spanned(attr, err))
 }
 
-pub fn validate_struct_field_rdf_attributes(
+pub fn validate_resource_struct_field_rdf_attributes(
     field: &syn::Field,
-    attributes: &StructFieldRdfAttributes,
+    attributes: &ResourceStructFieldRdfAttributes,
 ) -> syn::Result<()> {
     if attributes.is_subject && attributes.predicate.is_some() {
         return Err(syn::Error::new_spanned(
@@ -60,16 +62,16 @@ pub fn validate_struct_field_rdf_attributes(
     Ok(())
 }
 
-pub fn validate_all_struct_field_rdf_attributes(
+pub fn validate_all_resource_struct_field_rdf_attributes(
     struct_input: &syn::DeriveInput,
     struct_definition: &syn::DataStruct,
-    field_atttributes: &[StructFieldRdfAttributes],
+    field_atttributes: &[ResourceStructFieldRdfAttributes],
 ) -> syn::Result<()> {
     let mut encountered_subject_field = false;
 
     // validate the fields for each attribute
     for (field, attributes) in struct_definition.fields.iter().zip(field_atttributes) {
-        validate_struct_field_rdf_attributes(field, attributes)?;
+        validate_resource_struct_field_rdf_attributes(field, attributes)?;
 
         if attributes.is_subject {
             if encountered_subject_field {
@@ -93,6 +95,28 @@ pub fn validate_all_struct_field_rdf_attributes(
     Ok(())
 }
 
+// literal structs
+
+#[derive(Debug, FromMeta)]
+pub struct LiteralStructRdfAttributes {
+    pub datatype: String,
+}
+
+/// parses the expected RDF attributes from a resource struct-level attribute
+pub fn parse_literal_struct_rdf_attributes(
+    input: &syn::DeriveInput,
+) -> syn::Result<LiteralStructRdfAttributes> {
+    let attr = get_rdf_attribute(&input.attrs).ok_or_else(|| {
+        syn::Error::new_spanned(
+            input,
+            "Missing required attribute: #[rdf(datatype = \"...\")]",
+        )
+    })?;
+
+    LiteralStructRdfAttributes::from_meta(&attr.meta)
+        .map_err(|err| syn::Error::new_spanned(attr, err))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -100,7 +124,7 @@ mod tests {
     use syn::parse_quote;
 
     #[test]
-    fn test_validate_all_struct_field_rdf_attributes_fails_with_no_subject() {
+    fn test_validate_all_resource_struct_field_rdf_attributes_fails_with_no_subject() {
         let test_struct: syn::DeriveInput = parse_quote! {
             #[rdf(type = "http://example.com/Person")]
             struct Person {
@@ -116,11 +140,11 @@ mod tests {
         let field_rdf_attributes = struct_data
             .fields
             .iter()
-            .map(parse_struct_field_rdf_attributes)
+            .map(parse_resource_struct_field_rdf_attributes)
             .collect::<Result<Vec<_>, syn::Error>>()
             .unwrap();
 
-        let syn_result = validate_all_struct_field_rdf_attributes(
+        let syn_result = validate_all_resource_struct_field_rdf_attributes(
             &test_struct,
             struct_data,
             &field_rdf_attributes,
@@ -135,7 +159,7 @@ mod tests {
     }
 
     #[test]
-    fn test_validate_all_struct_field_rdf_attributes_fails_with_multiple_subjects() {
+    fn test_validate_all_resource_struct_field_rdf_attributes_fails_with_multiple_subjects() {
         let test_struct: syn::DeriveInput = parse_quote! {
             #[rdf(type = "http://example.com/Person")]
             struct Person {
@@ -157,11 +181,11 @@ mod tests {
         let field_rdf_attributes = struct_data
             .fields
             .iter()
-            .map(parse_struct_field_rdf_attributes)
+            .map(parse_resource_struct_field_rdf_attributes)
             .collect::<Result<Vec<_>, syn::Error>>()
             .unwrap();
 
-        let syn_result = validate_all_struct_field_rdf_attributes(
+        let syn_result = validate_all_resource_struct_field_rdf_attributes(
             &test_struct,
             struct_data,
             &field_rdf_attributes,
@@ -176,7 +200,8 @@ mod tests {
     }
 
     #[test]
-    fn test_validate_all_struct_field_rdf_attributes_fails_with_invalid_field_attributes() {
+    fn test_validate_all_resource_struct_field_rdf_attributes_fails_with_invalid_field_attributes()
+    {
         let test_struct: syn::DeriveInput = parse_quote! {
             #[rdf(type = "http://example.com/Person")]
             struct Person {
@@ -192,11 +217,11 @@ mod tests {
         let field_rdf_attributes = struct_data
             .fields
             .iter()
-            .map(parse_struct_field_rdf_attributes)
+            .map(parse_resource_struct_field_rdf_attributes)
             .collect::<Result<Vec<_>, syn::Error>>()
             .unwrap();
 
-        let syn_result = validate_all_struct_field_rdf_attributes(
+        let syn_result = validate_all_resource_struct_field_rdf_attributes(
             &test_struct,
             struct_data,
             &field_rdf_attributes,

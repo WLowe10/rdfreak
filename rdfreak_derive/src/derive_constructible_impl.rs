@@ -2,8 +2,8 @@ use proc_macro2::TokenStream;
 use quote::quote;
 
 use crate::utils::{
-    parse_struct_field_rdf_attributes, parse_struct_rdf_attributes,
-    validate_all_struct_field_rdf_attributes,
+    parse_resource_struct_field_rdf_attributes, parse_resource_struct_rdf_attributes,
+    validate_all_resource_struct_field_rdf_attributes,
 };
 
 pub fn derive_constructible_impl(input: syn::DeriveInput) -> syn::Result<TokenStream> {
@@ -16,15 +16,15 @@ pub fn derive_constructible_impl(input: syn::DeriveInput) -> syn::Result<TokenSt
 
     let struct_identifier = &input.ident;
 
-    parse_struct_rdf_attributes(&input)?;
+    parse_resource_struct_rdf_attributes(&input)?;
 
     let field_attributes = struct_data
         .fields
         .iter()
-        .map(parse_struct_field_rdf_attributes)
+        .map(parse_resource_struct_field_rdf_attributes)
         .collect::<Result<Vec<_>, syn::Error>>()?;
 
-    validate_all_struct_field_rdf_attributes(&input, struct_data, &field_attributes)?;
+    validate_all_resource_struct_field_rdf_attributes(&input, struct_data, &field_attributes)?;
 
     // generate code for building construct patterns for each field
 
