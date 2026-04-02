@@ -72,7 +72,7 @@ pub fn derive_from_rdf_impl(input: syn::DeriveInput) -> syn::Result<TokenStream>
                 let rdf_types = Vec::<::rdfreak::RdfType>::from_property(
                     graph,
                     subject,
-                    &NamedNode::new_unchecked("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
+                    &::oxrdf::NamedNode::new_unchecked("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
                 )
                 .map_err(|err| ::rdfreak::ResourceError::Property {
                     subject: subject.clone(),
@@ -162,7 +162,7 @@ mod tests {
                     let rdf_types = Vec::<::rdfreak::RdfType>::from_property(
                         graph,
                         subject,
-                        &NamedNode::new_unchecked("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
+                        &::oxrdf::NamedNode::new_unchecked("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
                     )
                     .map_err(|err| ::rdfreak::ResourceError::Property {
                         subject: subject.clone(),
