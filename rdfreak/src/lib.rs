@@ -46,7 +46,6 @@ pub use constructible_property::*;
 // utils
 
 pub mod macros;
-pub use macros::*;
 
 pub mod rdf_type;
 pub use rdf_type::*;

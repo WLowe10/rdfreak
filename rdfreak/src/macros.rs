@@ -24,8 +24,8 @@ macro_rules! impl_traits_for_literal {
             fn from_literal(literal: &::oxrdf::Literal) -> $crate::FromRdfLiteralResult<Self> {
                 if literal.datatype().as_str() != $datatype {
                     return Err($crate::RdfLiteralError::InvalidDatatype {
-                        expected: $datatype.to_string(),
-                        actual: literal.datatype().as_str().to_string(),
+                        expected: $datatype.to_owned(),
+                        actual: literal.datatype().as_str().to_owned(),
                     });
                 }
 
@@ -92,6 +92,25 @@ macro_rules! impl_traits_for_literal {
                     <Self as $crate::FromRdfObject>::from_term(graph, &object_term.into())?;
 
                 Ok(object_value)
+            }
+        }
+
+        impl $crate::ConstructibleProperty for $t {
+            fn insert_patterns(
+                construct_query_patterns: &mut $crate::ConstructQueryPatterns,
+                variable_generator: &mut $crate::SparqlVariableGenerator,
+                subject_variable: &str,
+                predicate: &::oxrdf::NamedNode,
+            ) {
+                let object_variable = variable_generator.next().unwrap();
+
+                let triple_pattern = $crate::TriplePattern::new(
+                    $crate::TriplePatternNode::Variable(subject_variable.to_owned()),
+                    $crate::TriplePatternNode::NamedNode(predicate.clone()),
+                    $crate::TriplePatternNode::Variable(object_variable),
+                );
+
+                construct_query_patterns.push_identical_triple_pattern(triple_pattern);
             }
         }
     };

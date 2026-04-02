@@ -110,7 +110,7 @@ pub fn derive_rdf_literal_impl(input: syn::DeriveInput) -> syn::Result<TokenStre
             ) {
                 let object_variable = variable_generator.next().unwrap();
 
-                let triple_pattern = ::oxrdf::TriplePattern::new(
+                let triple_pattern = ::rdfreak::TriplePattern::new(
                     ::rdfreak::TriplePatternNode::Variable(subject_variable.to_owned()),
                     ::rdfreak::TriplePatternNode::NamedNode(predicate.clone()),
                     ::rdfreak::TriplePatternNode::Variable(object_variable),
@@ -229,7 +229,7 @@ mod tests {
                 ) {
                     let object_variable = variable_generator.next().unwrap();
 
-                    let triple_pattern = ::oxrdf::TriplePattern::new(
+                    let triple_pattern = ::rdfreak::TriplePattern::new(
                         ::rdfreak::TriplePatternNode::Variable(subject_variable.to_owned()),
                         ::rdfreak::TriplePatternNode::NamedNode(predicate.clone()),
                         ::rdfreak::TriplePatternNode::Variable(object_variable),
