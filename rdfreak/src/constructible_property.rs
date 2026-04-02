@@ -65,7 +65,7 @@ impl<T: ConstructibleProperty> ConstructibleProperty for Vec<T> {
     }
 }
 
-macro_rules! impl_from_rdf_object_for_primitive {
+macro_rules! impl_constructible_property_for_primitive {
     ($t:ty) => {
         impl ConstructibleProperty for $t {
             fn insert_patterns(
@@ -88,17 +88,17 @@ macro_rules! impl_from_rdf_object_for_primitive {
     };
 }
 
-impl_from_rdf_object_for_primitive!(bool);
+impl_constructible_property_for_primitive!(bool);
 
-impl_from_rdf_object_for_primitive!(i8);
-impl_from_rdf_object_for_primitive!(i32);
-impl_from_rdf_object_for_primitive!(i64);
+impl_constructible_property_for_primitive!(i8);
+impl_constructible_property_for_primitive!(i32);
+impl_constructible_property_for_primitive!(i64);
 
-impl_from_rdf_object_for_primitive!(u8);
-impl_from_rdf_object_for_primitive!(u32);
-impl_from_rdf_object_for_primitive!(u64);
+impl_constructible_property_for_primitive!(u8);
+impl_constructible_property_for_primitive!(u32);
+impl_constructible_property_for_primitive!(u64);
 
-impl_from_rdf_object_for_primitive!(f32);
-impl_from_rdf_object_for_primitive!(f64);
+impl_constructible_property_for_primitive!(f32);
+impl_constructible_property_for_primitive!(f64);
 
-impl_from_rdf_object_for_primitive!(String);
+impl_constructible_property_for_primitive!(String);
