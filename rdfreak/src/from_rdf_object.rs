@@ -68,6 +68,14 @@ impl FromRdfObject for Term {
     }
 }
 
+impl<T: FromRdfObject> FromRdfObject for Box<T> {
+    fn from_term(graph: &Graph, term: &Term) -> FromRdfObjectResult<Self> {
+        let value = T::from_term(graph, term)?;
+
+        Ok(Box::new(value))
+    }
+}
+
 macro_rules! impl_from_rdf_object_for_primitive {
     ($t:ty) => {
         impl FromRdfObject for $t {

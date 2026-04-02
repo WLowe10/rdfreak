@@ -35,10 +35,15 @@ impl ToRdfObject for Literal {
     }
 }
 
-// feels unecessary, but may be needed for consistency reasons
 impl ToRdfObject for Term {
     fn to_term(&self, _graph: &mut Graph) -> Term {
         self.clone()
+    }
+}
+
+impl<T: ToRdfObject> ToRdfObject for Box<T> {
+    fn to_term(&self, graph: &mut Graph) -> Term {
+        self.as_ref().to_term(graph)
     }
 }
 
