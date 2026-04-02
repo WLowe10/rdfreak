@@ -23,10 +23,10 @@ pub enum ResourceError {
     },
 }
 
-pub type FromResourceResult<T> = Result<T, ResourceError>;
+pub type FromRdfResult<T> = Result<T, ResourceError>;
 
 /// A trait for converting an RDF graph into an instance of a type.
 pub trait FromRdf: Sized {
     /// Converts an RDF graph into an instance of the implementing type.
-    fn from_rdf(graph: &Graph, subject: &NamedOrBlankNode) -> FromResourceResult<Self>;
+    fn from_rdf(graph: &Graph, subject: &NamedOrBlankNode) -> FromRdfResult<Self>;
 }

@@ -3,7 +3,7 @@ use std::{error::Error, sync::Arc};
 use oxrdf::{Graph, NamedOrBlankNode};
 use oxttl::TurtleSerializer;
 use rdfreak::{
-    ConstructQueryPatterns, Constructible, FromRdf, FromResourceResult, Resource, ResourceError,
+    ConstructQueryPatterns, Constructible, FromRdf, FromRdfResult, Resource, ResourceError,
     SparqlVariableGenerator, ToRdf, TriplePattern,
 };
 
@@ -102,7 +102,7 @@ impl QueryClient {
             .map_err(QueryError::FailedToQueryGraph)?;
 
         let entities = rdfreak::deserialize_all::<R>(&result_graph)
-            .collect::<FromResourceResult<_>>()
+            .collect::<FromRdfResult<_>>()
             .map_err(QueryError::FailedToDeserializeResource)?;
 
         Ok(entities)

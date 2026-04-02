@@ -1,8 +1,8 @@
 use oxrdf::{Graph, NamedNode, Term, Triple};
 
 use crate::{
-    DeserializeRdfObjectError, DeserializeRdfObjectResult, DeserializeRdfPropertyResult,
-    FromRdfObject, FromRdfProperty, RdfPropertyError, ToRdfObject, ToRdfProperty,
+    DeserializeRdfPropertyResult, FromRdfObject, FromRdfObjectResult, FromRdfProperty,
+    RdfObjectError, RdfPropertyError, ToRdfObject, ToRdfProperty,
 };
 
 #[derive(Debug, Clone)]
@@ -27,9 +27,9 @@ impl ToRdfObject for RdfType {
 }
 
 impl FromRdfObject for RdfType {
-    fn from_term(_graph: &Graph, term: &oxrdf::Term) -> DeserializeRdfObjectResult<Self> {
+    fn from_term(_graph: &Graph, term: &oxrdf::Term) -> FromRdfObjectResult<Self> {
         let Term::NamedNode(named_node) = term else {
-            return Err(DeserializeRdfObjectError::UnexpectedTermType(term.clone()));
+            return Err(RdfObjectError::UnexpectedTermType(term.clone()));
         };
 
         Ok(Self::new(named_node.clone()))

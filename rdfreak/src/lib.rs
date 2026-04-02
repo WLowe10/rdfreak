@@ -7,8 +7,11 @@ pub use from_rdf::*;
 pub mod literal;
 pub use literal::*;
 
-pub mod object;
-pub use object::*;
+pub mod to_rdf_object;
+pub use to_rdf_object::*;
+
+pub mod from_rdf_object;
+pub use from_rdf_object::*;
 
 pub mod to_rdf_property;
 pub use to_rdf_property::*;

@@ -1,8 +1,8 @@
 use oxrdf::{Graph, NamedNode, NamedOrBlankNode, Term, Triple};
 
 use rdfreak::{
-    DeserializeRdfObjectResult, RdfPropertyError, DeserializeRdfPropertyResult,
-    FromRdfObject, FromRdfProperty, ToRdfObject, ToRdfProperty,
+    DeserializeRdfPropertyResult, FromRdfObject, FromRdfObjectResult, FromRdfProperty,
+    RdfPropertyError, ToRdfObject, ToRdfProperty,
 };
 
 /// Represents a reference to an RDF object term that can be deserialized into a value of type T.
@@ -22,7 +22,7 @@ impl<T> ObjectRef<T> {
 }
 
 impl<T: FromRdfObject> ObjectRef<T> {
-    pub fn deserialize(&self, graph: &Graph) -> DeserializeRdfObjectResult<T> {
+    pub fn deserialize(&self, graph: &Graph) -> FromRdfObjectResult<T> {
         T::from_term(graph, &self.object_term)
     }
 }
@@ -35,7 +35,7 @@ impl<T: ToRdfObject> ToRdfObject for ObjectRef<T> {
 }
 
 impl<T: FromRdfObject> FromRdfObject for ObjectRef<T> {
-    fn from_term(_graph: &Graph, term: &Term) -> DeserializeRdfObjectResult<Self> {
+    fn from_term(_graph: &Graph, term: &Term) -> FromRdfObjectResult<Self> {
         // when deserializing an ObjectRef, we just wrap the term in an ObjectRef struct. The actual deserialization to type T happens when the deserialize method is called on the ObjectRef instance.
         Ok(ObjectRef::new(term.clone()))
     }
@@ -60,9 +60,7 @@ impl<T> FromRdfProperty for ObjectRef<T> {
         let maybe_object_term = graph.object_for_subject_predicate(subject, predicate);
 
         let Some(object_term) = maybe_object_term else {
-            return Err(RdfPropertyError::MissingObjectValue(
-                predicate.clone(),
-            ));
+            return Err(RdfPropertyError::MissingObjectValue(predicate.clone()));
         };
 
         Ok(ObjectRef::new(object_term.into()))

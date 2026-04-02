@@ -1,6 +1,6 @@
 use oxrdf::{BlankNode, Graph, Literal, NamedNode, NamedOrBlankNode, Term};
 
-use crate::{DeserializeRdfObjectError, FromRdfObject};
+use crate::{FromRdfObject, RdfObjectError};
 
 #[derive(Debug, thiserror::Error)]
 pub enum RdfPropertyError {
@@ -8,7 +8,7 @@ pub enum RdfPropertyError {
     MissingObjectValue(NamedNode),
 
     #[error(transparent)]
-    Object(#[from] DeserializeRdfObjectError),
+    Object(#[from] RdfObjectError),
 }
 
 pub type DeserializeRdfPropertyResult<T> = Result<T, RdfPropertyError>;

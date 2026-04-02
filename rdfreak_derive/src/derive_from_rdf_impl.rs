@@ -53,7 +53,7 @@ pub fn derive_from_rdf_impl(input: syn::DeriveInput) -> syn::Result<TokenStream>
                     graph,
                     subject,
                     &::oxrdf::NamedNode::new_unchecked(#predicate),
-                ).map_err(|err| ::rdfreak::DeserializeResourceError::FailedToDeserializeProperty {
+                ).map_err(|err| ::rdfreak::ResourceError::Property {
                     property: #field_name_str.to_owned(),
                     subject: subject.clone(),
                     source: Box::new(err),
@@ -64,7 +64,7 @@ pub fn derive_from_rdf_impl(input: syn::DeriveInput) -> syn::Result<TokenStream>
 
     let tokens = quote! {
         impl ::rdfreak::FromRdf for #struct_identifier {
-            fn from_rdf(graph: &::oxrdf::Graph, subject: &::oxrdf::NamedOrBlankNode) -> ::rdfreak::DeserializeResourceResult<Self> {
+            fn from_rdf(graph: &::oxrdf::Graph, subject: &::oxrdf::NamedOrBlankNode) -> ::rdfreak::FromRdfResult<Self> {
                 use ::rdfreak::FromRdfProperty;
 
                 let expected_rdf_type = <Self as ::rdfreak::Resource>::get_rdf_type();
@@ -74,7 +74,7 @@ pub fn derive_from_rdf_impl(input: syn::DeriveInput) -> syn::Result<TokenStream>
                     subject,
                     &NamedNode::new_unchecked("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
                 )
-                .map_err(|err| ::rdfreak::DeserializeResourceError::FailedToDeserializeProperty {
+                .map_err(|err| ::rdfreak::ResourceError::Property {
                     subject: subject.clone(),
                     property: "rdf:type".to_string(),
                     source: Box::new(err),
@@ -85,7 +85,7 @@ pub fn derive_from_rdf_impl(input: syn::DeriveInput) -> syn::Result<TokenStream>
                     .any(|rdf_type| rdf_type.get_named_node() == &expected_rdf_type);
 
                 if !has_expected_rdf_type {
-                    return Err(::rdfreak::DeserializeResourceError::InvalidRdfType {
+                    return Err(::rdfreak::ResourceError::InvalidRdfType {
                         expected: expected_rdf_type,
                         found: rdf_types
                             .into_iter()
@@ -102,9 +102,9 @@ pub fn derive_from_rdf_impl(input: syn::DeriveInput) -> syn::Result<TokenStream>
         }
 
         impl ::rdfreak::FromRdfObject for #struct_identifier {
-            fn from_term(graph: &::oxrdf::Graph, term: &::oxrdf::Term) -> ::rdfreak::DeserializeRdfObjectResult<Self> {
+            fn from_term(graph: &::oxrdf::Graph, term: &::oxrdf::Term) -> ::rdfreak::FromRdfObjectResult<Self> {
                 let ::oxrdf::Term::NamedNode(named_node) = term else {
-                    return Err(::rdfreak::DeserializeRdfObjectError::UnexpectedTermType(term.clone()));
+                    return Err(::rdfreak::RdfObjectError::UnexpectedTermType(term.clone()));
                 };
 
                 let value = <Self as ::rdfreak::FromRdf>::from_rdf(graph, &::oxrdf::NamedOrBlankNode::NamedNode(named_node.clone()))?;
@@ -117,7 +117,7 @@ pub fn derive_from_rdf_impl(input: syn::DeriveInput) -> syn::Result<TokenStream>
             fn from_property(graph: &::oxrdf::Graph, subject: &::oxrdf::NamedOrBlankNode, predicate: &::oxrdf::NamedNode) -> ::rdfreak::DeserializeRdfPropertyResult<Self> {
                 let object_term = graph
                     .object_for_subject_predicate(subject, predicate)
-                    .ok_or_else(|| ::rdfreak::DeserializeRdfPropertyError::MissingObjectValue(predicate.clone()))?;
+                    .ok_or_else(|| ::rdfreak::RdfPropertyError::MissingObjectValue(predicate.clone()))?;
 
                 let value = <Self as ::rdfreak::FromRdfObject>::from_term(graph, &object_term.into_owned())?;
 
@@ -154,7 +154,7 @@ mod tests {
 
         let expected = quote! {
             impl ::rdfreak::FromRdf for Person {
-                fn from_rdf(graph: &::oxrdf::Graph, subject: &::oxrdf::NamedOrBlankNode) -> ::rdfreak::DeserializeResourceResult<Self> {
+                fn from_rdf(graph: &::oxrdf::Graph, subject: &::oxrdf::NamedOrBlankNode) -> ::rdfreak::FromRdfResult<Self> {
                     use ::rdfreak::FromRdfProperty;
 
                     let expected_rdf_type = <Self as ::rdfreak::Resource>::get_rdf_type();
@@ -164,7 +164,7 @@ mod tests {
                         subject,
                         &NamedNode::new_unchecked("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
                     )
-                    .map_err(|err| ::rdfreak::DeserializeResourceError::FailedToDeserializeProperty {
+                    .map_err(|err| ::rdfreak::ResourceError::Property {
                         subject: subject.clone(),
                         property: "rdf:type".to_string(),
                         source: Box::new(err),
@@ -175,7 +175,7 @@ mod tests {
                         .any(|rdf_type| rdf_type.get_named_node() == &expected_rdf_type);
 
                     if !has_expected_rdf_type {
-                        return Err(::rdfreak::DeserializeResourceError::InvalidRdfType {
+                        return Err(::rdfreak::ResourceError::InvalidRdfType {
                             expected: expected_rdf_type,
                             found: rdf_types
                                 .into_iter()
@@ -192,7 +192,7 @@ mod tests {
                             &::oxrdf::NamedNode::new_unchecked("http://example.org/name"),
                         )
                         .map_err(
-                            |err| ::rdfreak::DeserializeResourceError::FailedToDeserializeProperty {
+                            |err| ::rdfreak::ResourceError::Property {
                                 property: "name".to_owned(),
                                 subject: subject.clone(),
                                 source: Box::new(err),
@@ -204,7 +204,7 @@ mod tests {
                             &::oxrdf::NamedNode::new_unchecked("http://example.org/age"),
                         )
                         .map_err(
-                            |err| ::rdfreak::DeserializeResourceError::FailedToDeserializeProperty {
+                            |err| ::rdfreak::ResourceError::Property {
                                 property: "age".to_owned(),
                                 subject: subject.clone(),
                                 source: Box::new(err),
@@ -216,7 +216,7 @@ mod tests {
                             &::oxrdf::NamedNode::new_unchecked("http://example.org/occupation"),
                         )
                         .map_err(
-                            |err| ::rdfreak::DeserializeResourceError::FailedToDeserializeProperty {
+                            |err| ::rdfreak::ResourceError::Property {
                                 property: "occupation".to_owned(),
                                 subject: subject.clone(),
                                 source: Box::new(err),
@@ -227,9 +227,9 @@ mod tests {
             }
 
             impl ::rdfreak::FromRdfObject for Person {
-                fn from_term(graph: &::oxrdf::Graph, term: &::oxrdf::Term) -> ::rdfreak::DeserializeRdfObjectResult<Self> {
+                fn from_term(graph: &::oxrdf::Graph, term: &::oxrdf::Term) -> ::rdfreak::FromRdfObjectResult<Self> {
                     let ::oxrdf::Term::NamedNode(named_node) = term else {
-                        return Err(::rdfreak::DeserializeRdfObjectError::UnexpectedTermType(term.clone()));
+                        return Err(::rdfreak::RdfObjectError::UnexpectedTermType(term.clone()));
                     };
 
                     let value = <Self as ::rdfreak::FromRdf>::from_rdf(graph, &::oxrdf::NamedOrBlankNode::NamedNode(named_node.clone()))?;
@@ -242,7 +242,7 @@ mod tests {
                 fn from_property(graph: &::oxrdf::Graph, subject: &::oxrdf::NamedOrBlankNode, predicate: &::oxrdf::NamedNode) -> ::rdfreak::DeserializeRdfPropertyResult<Self> {
                     let object_term = graph
                         .object_for_subject_predicate(subject, predicate)
-                        .ok_or_else(|| ::rdfreak::DeserializeRdfPropertyError::MissingObjectValue(predicate.clone()))?;
+                        .ok_or_else(|| ::rdfreak::RdfPropertyError::MissingObjectValue(predicate.clone()))?;
 
                     let value = <Self as ::rdfreak::FromRdfObject>::from_term(graph, &object_term.into_owned())?;
 
