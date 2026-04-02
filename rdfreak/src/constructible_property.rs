@@ -13,28 +13,6 @@ pub trait ConstructibleProperty {
     );
 }
 
-// implementations
-
-// note: this implementation will be basically the exact same for all literals
-impl ConstructibleProperty for String {
-    fn insert_patterns(
-        construct_query_patterns: &mut ConstructQueryPatterns,
-        variable_generator: &mut SparqlVariableGenerator,
-        subject_variable: &str,
-        predicate: &NamedNode,
-    ) {
-        let object_variable = variable_generator.next().unwrap();
-
-        let triple_pattern = TriplePattern::new(
-            TriplePatternNode::Variable(subject_variable.to_owned()),
-            TriplePatternNode::NamedNode(predicate.clone()),
-            TriplePatternNode::Variable(object_variable),
-        );
-
-        construct_query_patterns.push_identical_triple_pattern(triple_pattern);
-    }
-}
-
 impl<T: ConstructibleProperty> ConstructibleProperty for Option<T> {
     fn insert_patterns(
         construct_query_patterns: &mut ConstructQueryPatterns,
@@ -86,3 +64,41 @@ impl<T: ConstructibleProperty> ConstructibleProperty for Vec<T> {
             .push_optional(inner_patterns.where_pattern);
     }
 }
+
+macro_rules! impl_from_rdf_object_for_primitive {
+    ($t:ty) => {
+        impl ConstructibleProperty for $t {
+            fn insert_patterns(
+                construct_query_patterns: &mut ConstructQueryPatterns,
+                variable_generator: &mut SparqlVariableGenerator,
+                subject_variable: &str,
+                predicate: &NamedNode,
+            ) {
+                let object_variable = variable_generator.next().unwrap();
+
+                let triple_pattern = TriplePattern::new(
+                    TriplePatternNode::Variable(subject_variable.to_owned()),
+                    TriplePatternNode::NamedNode(predicate.clone()),
+                    TriplePatternNode::Variable(object_variable),
+                );
+
+                construct_query_patterns.push_identical_triple_pattern(triple_pattern);
+            }
+        }
+    };
+}
+
+impl_from_rdf_object_for_primitive!(bool);
+
+impl_from_rdf_object_for_primitive!(i8);
+impl_from_rdf_object_for_primitive!(i32);
+impl_from_rdf_object_for_primitive!(i64);
+
+impl_from_rdf_object_for_primitive!(u8);
+impl_from_rdf_object_for_primitive!(u32);
+impl_from_rdf_object_for_primitive!(u64);
+
+impl_from_rdf_object_for_primitive!(f32);
+impl_from_rdf_object_for_primitive!(f64);
+
+impl_from_rdf_object_for_primitive!(String);
