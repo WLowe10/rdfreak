@@ -9,7 +9,6 @@ members = [
 ]
 
 [workspace.package]
-description = "Library for mapping rust types to RDF entities"
 edition = "2024"
 license = "MIT"
 keywords = ["rdf", "serialization", "deserialization"]

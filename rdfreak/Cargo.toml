@@ -1,7 +1,7 @@
 [package]
 name = "rdfreak"
 version = "0.1.0"
-description = "Library for mapping rust types to RDF entities"
+description = "Library for mapping types to RDF"
 edition.workspace = true
 repository.workspace = true
 keywords.workspace = true

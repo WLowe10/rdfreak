@@ -101,11 +101,11 @@ impl QueryClient {
             .await
             .map_err(QueryError::FailedToQueryGraph)?;
 
-        let entities = rdfreak::deserialize_all::<R>(&result_graph)
+        let resources = rdfreak::deserialize_all::<R>(&result_graph)
             .collect::<FromRdfResult<_>>()
             .map_err(QueryError::FailedToDeserializeResource)?;
 
-        Ok(entities)
+        Ok(resources)
     }
 
     /// Inserts the given resource into the graph.

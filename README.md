@@ -11,7 +11,7 @@ cargo add rdfreak_derive
 
 ## Usage
 
-### Declaring Entities
+### Declaring Resources
 
 The easiest way to declare a resource is using the derive macro from `rdfreak_derive`. When using the derive macro, one field of your resource struct must be marked with `#[rdf(subject)]`, and the rest must be marked with `#[rdf(predicate = "")]`.
 
