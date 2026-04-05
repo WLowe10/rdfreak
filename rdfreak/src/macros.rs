@@ -1,13 +1,6 @@
 /// Implements all of the traits a type should implement to be used as a literal in rdfreak.
 ///
 /// The type must implement `ToString` and `FromStr` for this to work, and the literal will be represented as a typed literal with the provided datatype.
-///
-/// # Example
-/// ```
-/// use rdfreak::impl_traits_for_literal;
-///
-/// impl_traits_for_literal!(i32, "http://www.w3.org/2001/XMLSchema#integer");
-/// ```
 #[macro_export]
 macro_rules! impl_traits_for_literal {
     ($t:ty, $datatype:expr) => {

@@ -65,8 +65,8 @@ pub fn derive_to_rdf_impl(input: syn::DeriveInput) -> syn::Result<TokenStream> {
                 let subject = ::rdfreak::Resource::get_subject(self);
 
                 match subject {
-                    NamedOrBlankNode::NamedNode(named_node) => Term::NamedNode(named_node.clone()),
-                    NamedOrBlankNode::BlankNode(blank_node) => Term::BlankNode(blank_node.clone()),
+                    ::oxrdf::NamedOrBlankNode::NamedNode(named_node) => ::oxrdf::Term::NamedNode(named_node.clone()),
+                    ::oxrdf::NamedOrBlankNode::BlankNode(blank_node) => ::oxrdf::Term::BlankNode(blank_node.clone()),
                 }
             }
         }
@@ -134,8 +134,8 @@ mod tests {
                     let subject = ::rdfreak::Resource::get_subject(self);
 
                     match subject {
-                        NamedOrBlankNode::NamedNode(named_node) => Term::NamedNode(named_node.clone()),
-                        NamedOrBlankNode::BlankNode(blank_node) => Term::BlankNode(blank_node.clone()),
+                        ::oxrdf::NamedOrBlankNode::NamedNode(named_node) => ::oxrdf::Term::NamedNode(named_node.clone()),
+                        ::oxrdf::NamedOrBlankNode::BlankNode(blank_node) => ::oxrdf::Term::BlankNode(blank_node.clone()),
                     }
                 }
             }
