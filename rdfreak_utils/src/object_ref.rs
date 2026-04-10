@@ -1,8 +1,8 @@
 use oxrdf::{Graph, NamedNode, NamedOrBlankNode, Term, Triple};
 
 use rdfreak::{
-    DeserializeRdfPropertyResult, FromRdfObject, FromRdfObjectResult, FromRdfProperty,
-    RdfPropertyError, ToRdfObject, ToRdfProperty,
+    FromRdfObject, FromRdfObjectResult, FromRdfProperty, FromRdfPropertyResult, RdfPropertyError,
+    ToRdfObject, ToRdfProperty,
 };
 
 /// Represents a reference to an RDF object term that can be deserialized into a value of type T.
@@ -56,7 +56,7 @@ impl<T> FromRdfProperty for ObjectRef<T> {
         graph: &Graph,
         subject: &NamedOrBlankNode,
         predicate: &NamedNode,
-    ) -> DeserializeRdfPropertyResult<Self> {
+    ) -> FromRdfPropertyResult<Self> {
         let maybe_object_term = graph.object_for_subject_predicate(subject, predicate);
 
         let Some(object_term) = maybe_object_term else {

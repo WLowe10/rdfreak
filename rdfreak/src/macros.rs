@@ -72,7 +72,7 @@ macro_rules! impl_traits_for_literal {
                 graph: &::oxrdf::Graph,
                 subject: &::oxrdf::NamedOrBlankNode,
                 predicate: &::oxrdf::NamedNode,
-            ) -> $crate::DeserializeRdfPropertyResult<Self> {
+            ) -> $crate::FromRdfPropertyResult<Self> {
                 let maybe_object_term = graph.object_for_subject_predicate(subject, predicate);
 
                 let Some(object_term) = maybe_object_term else {

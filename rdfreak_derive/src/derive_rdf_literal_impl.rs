@@ -85,7 +85,7 @@ pub fn derive_rdf_literal_impl(input: syn::DeriveInput) -> syn::Result<TokenStre
                 graph: &::oxrdf::Graph,
                 subject: &::oxrdf::NamedOrBlankNode,
                 predicate: &::oxrdf::NamedNode,
-            ) -> ::rdfreak::DeserializeRdfPropertyResult<Self> {
+            ) -> ::rdfreak::FromRdfPropertyResult<Self> {
                 let maybe_object_term = graph.object_for_subject_predicate(subject, predicate);
 
                 let Some(object_term) = maybe_object_term else {
@@ -204,7 +204,7 @@ mod tests {
                     graph: &::oxrdf::Graph,
                     subject: &::oxrdf::NamedOrBlankNode,
                     predicate: &::oxrdf::NamedNode,
-                ) -> ::rdfreak::DeserializeRdfPropertyResult<Self> {
+                ) -> ::rdfreak::FromRdfPropertyResult<Self> {
                     let maybe_object_term = graph.object_for_subject_predicate(subject, predicate);
 
                     let Some(object_term) = maybe_object_term else {

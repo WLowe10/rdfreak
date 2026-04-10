@@ -11,7 +11,7 @@ pub enum RdfPropertyError {
     Object(#[from] RdfObjectError),
 }
 
-pub type DeserializeRdfPropertyResult<T> = Result<T, RdfPropertyError>;
+pub type FromRdfPropertyResult<T> = Result<T, RdfPropertyError>;
 
 /// A trait for deserializing a property value from an RDF graph, given a subject and predicate.
 pub trait FromRdfProperty: Sized {
@@ -20,7 +20,7 @@ pub trait FromRdfProperty: Sized {
         graph: &Graph,
         subject: &NamedOrBlankNode,
         predicate: &NamedNode,
-    ) -> DeserializeRdfPropertyResult<Self>;
+    ) -> FromRdfPropertyResult<Self>;
 }
 
 impl<T: FromRdfProperty> FromRdfProperty for Box<T> {
@@ -28,7 +28,7 @@ impl<T: FromRdfProperty> FromRdfProperty for Box<T> {
         graph: &Graph,
         subject: &NamedOrBlankNode,
         predicate: &NamedNode,
-    ) -> DeserializeRdfPropertyResult<Self> {
+    ) -> FromRdfPropertyResult<Self> {
         let inner_value = T::from_property(graph, subject, predicate)?;
 
         Ok(Box::new(inner_value))
@@ -40,7 +40,7 @@ impl<T: FromRdfObject> FromRdfProperty for Option<T> {
         graph: &Graph,
         subject: &NamedOrBlankNode,
         predicate: &NamedNode,
-    ) -> DeserializeRdfPropertyResult<Self> {
+    ) -> FromRdfPropertyResult<Self> {
         let maybe_object_term = graph.object_for_subject_predicate(subject, predicate);
 
         let Some(object_term) = maybe_object_term else {
@@ -58,7 +58,7 @@ impl<T: FromRdfObject> FromRdfProperty for Vec<T> {
         graph: &Graph,
         subject: &NamedOrBlankNode,
         predicate: &NamedNode,
-    ) -> DeserializeRdfPropertyResult<Self> {
+    ) -> FromRdfPropertyResult<Self> {
         let object_terms = graph.objects_for_subject_predicate(subject, predicate);
 
         let mut objects = Vec::new();
@@ -81,7 +81,7 @@ macro_rules! impl_from_rdf_property_for_object {
                 graph: &Graph,
                 subject: &NamedOrBlankNode,
                 predicate: &NamedNode,
-            ) -> DeserializeRdfPropertyResult<Self> {
+            ) -> FromRdfPropertyResult<Self> {
                 let maybe_object_term = graph.object_for_subject_predicate(subject, predicate);
 
                 let Some(object_term) = maybe_object_term else {

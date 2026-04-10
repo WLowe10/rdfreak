@@ -1,8 +1,8 @@
 use oxrdf::{Graph, NamedNode, Term, Triple};
 
 use crate::{
-    DeserializeRdfPropertyResult, FromRdfObject, FromRdfObjectResult, FromRdfProperty,
-    RdfObjectError, RdfPropertyError, ToRdfObject, ToRdfProperty,
+    FromRdfObject, FromRdfObjectResult, FromRdfProperty, FromRdfPropertyResult, RdfObjectError,
+    RdfPropertyError, ToRdfObject, ToRdfProperty,
 };
 
 #[derive(Debug, Clone)]
@@ -58,7 +58,7 @@ impl FromRdfProperty for RdfType {
         graph: &Graph,
         subject: &oxrdf::NamedOrBlankNode,
         predicate: &NamedNode,
-    ) -> DeserializeRdfPropertyResult<Self> {
+    ) -> FromRdfPropertyResult<Self> {
         let maybe_object_term = graph.object_for_subject_predicate(subject, predicate);
 
         let Some(object_term) = maybe_object_term else {

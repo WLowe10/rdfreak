@@ -114,7 +114,7 @@ pub fn derive_from_rdf_impl(input: syn::DeriveInput) -> syn::Result<TokenStream>
         }
 
         impl ::rdfreak::FromRdfProperty for #struct_identifier {
-            fn from_property(graph: &::oxrdf::Graph, subject: &::oxrdf::NamedOrBlankNode, predicate: &::oxrdf::NamedNode) -> ::rdfreak::DeserializeRdfPropertyResult<Self> {
+            fn from_property(graph: &::oxrdf::Graph, subject: &::oxrdf::NamedOrBlankNode, predicate: &::oxrdf::NamedNode) -> ::rdfreak::FromRdfPropertyResult<Self> {
                 let object_term = graph
                     .object_for_subject_predicate(subject, predicate)
                     .ok_or_else(|| ::rdfreak::RdfPropertyError::MissingObjectValue(predicate.clone()))?;
@@ -239,7 +239,7 @@ mod tests {
             }
 
             impl ::rdfreak::FromRdfProperty for Person {
-                fn from_property(graph: &::oxrdf::Graph, subject: &::oxrdf::NamedOrBlankNode, predicate: &::oxrdf::NamedNode) -> ::rdfreak::DeserializeRdfPropertyResult<Self> {
+                fn from_property(graph: &::oxrdf::Graph, subject: &::oxrdf::NamedOrBlankNode, predicate: &::oxrdf::NamedNode) -> ::rdfreak::FromRdfPropertyResult<Self> {
                     let object_term = graph
                         .object_for_subject_predicate(subject, predicate)
                         .ok_or_else(|| ::rdfreak::RdfPropertyError::MissingObjectValue(predicate.clone()))?;
