@@ -103,11 +103,15 @@ pub fn derive_from_rdf_impl(input: syn::DeriveInput) -> syn::Result<TokenStream>
 
         impl ::rdfreak::FromRdfObject for #struct_identifier {
             fn from_term(graph: &::oxrdf::Graph, term: &::oxrdf::Term) -> ::rdfreak::FromRdfObjectResult<Self> {
-                let ::oxrdf::Term::NamedNode(named_node) = term else {
-                    return Err(::rdfreak::RdfObjectError::UnexpectedTermType(term.clone()));
+                let named_or_blank_node = match term {
+                    ::oxrdf::Term::NamedNode(named_node) => ::oxrdf::NamedOrBlankNode::NamedNode(named_node.clone()),
+                    ::oxrdf::Term::BlankNode(blank_node) => ::oxrdf::NamedOrBlankNode::BlankNode(blank_node.clone()),
+                    _ => {
+                        return Err(::rdfreak::RdfObjectError::UnexpectedTermType(term.clone()));
+                    }
                 };
 
-                let value = <Self as ::rdfreak::FromRdf>::from_rdf(graph, &::oxrdf::NamedOrBlankNode::NamedNode(named_node.clone()))?;
+                let value = <Self as ::rdfreak::FromRdf>::from_rdf(graph, &named_or_blank_node)?;
 
                 Ok(value)
             }
@@ -228,11 +232,15 @@ mod tests {
 
             impl ::rdfreak::FromRdfObject for Person {
                 fn from_term(graph: &::oxrdf::Graph, term: &::oxrdf::Term) -> ::rdfreak::FromRdfObjectResult<Self> {
-                    let ::oxrdf::Term::NamedNode(named_node) = term else {
-                        return Err(::rdfreak::RdfObjectError::UnexpectedTermType(term.clone()));
+                    let named_or_blank_node = match term {
+                        ::oxrdf::Term::NamedNode(named_node) => ::oxrdf::NamedOrBlankNode::NamedNode(named_node.clone()),
+                        ::oxrdf::Term::BlankNode(blank_node) => ::oxrdf::NamedOrBlankNode::BlankNode(blank_node.clone()),
+                        _ => {
+                            return Err(::rdfreak::RdfObjectError::UnexpectedTermType(term.clone()));
+                        }
                     };
 
-                    let value = <Self as ::rdfreak::FromRdf>::from_rdf(graph, &::oxrdf::NamedOrBlankNode::NamedNode(named_node.clone()))?;
+                    let value = <Self as ::rdfreak::FromRdf>::from_rdf(graph, &named_or_blank_node)?;
 
                     Ok(value)
                 }
